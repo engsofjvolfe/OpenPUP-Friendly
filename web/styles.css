@@ -1,0 +1,420 @@
+/* OpenPUP - Protocolo Universal de Prompt  
+Licença: CC BY-NC-SA 4.0  
+Autor: Jeanco Volfe 
+Repositório: https://github.com/engsofjvolfe/OpenPUP.git  */
+
+/* Reset básico */
+* { box-sizing: border-box; }
+body, h1, h2, h3, p, ul, li, table, textarea, input, select, button {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+body {
+  background: #f5f7fb;
+  color: #1f2d3d;
+  line-height: 1.55;
+}
+
+/* Header */
+header {
+  background: #2c3e50;
+  color: #fff;
+  padding: .875rem 1.125rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+header h1 { font-size: 1.25rem; font-weight: 600; }
+.actions { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.actions button, #copy-prompt{
+  background: #3498db;
+  color: #fff;
+  border: 0;
+  padding: .5rem .75rem;
+  border-radius: .375rem;
+  cursor: pointer;
+  transition: background .2s ease;
+  font-weight: 600;
+}
+.actions button:hover { background: #2d7fb7; }
+.hdr-hint { opacity: .8; font-size: .85rem; }
+
+.img-and-btn, #copy-and-feedback{
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  width: 100%; 
+  margin-bottom: 0.8rem;
+}
+
+.img-and-btn img.img-left {
+  max-height: 2.5rem;
+  border-radius: .25rem;
+}
+
+#copy-feedback{display:none; border-color: #0369a1; padding: 0.3rem;}
+
+/* Layout */
+.container {
+  display: flex;
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 1.25rem;
+  gap: 1.25rem;
+}
+.left-panel, .right-panel {
+  flex: 1;
+  background: #fff;
+  padding: 1.125rem;
+  border-radius: .625rem;
+  box-shadow: 0 .125rem .625rem rgba(16, 24, 40, .06);
+}
+
+/* Responsivo */
+@media (max-width: 60rem) {
+  .container { flex-direction: column; }
+}
+
+/* Steps (somente humano) */
+.step { border: .0625rem solid #e4e7ec; border-radius: .5rem; padding: .875rem; margin-bottom: 1rem; background: #fff; }
+.step h2 {
+  display: flex; align-items: center; justify-content: space-between;
+  color: #1f2d3d; font-size: 1.7rem; margin-bottom: .700rem;
+}
+.badge-human {
+  background: #16a34a; color: #fff; padding: .125rem .5rem; border-radius: 62.4375rem; font-size: .75rem; font-weight: 700;
+}
+
+.input-group { margin-bottom: .75rem; position: relative;}
+.input-group label { display:block; font-weight: 700; margin-bottom: .375rem; color:#1f2d3d; }
+.input-group input[type="text"],
+.input-group input[type="number"],
+.input-group select,
+.input-group textarea {
+  width: 100%; padding: .625rem .75rem; border: .0625rem solid #d0d5dd; border-radius: .5rem; background: #fff;
+}
+.input-group textarea { min-height: 6.875rem; resize: vertical; }
+
+.input-group input[list] {
+  width: 100%;
+  padding: .625rem .75rem;
+  border: .0625rem solid #d0d5dd;
+  border-radius: .5rem;
+  background: #fff;
+  font-size: 1rem;
+}
+
+.radio-group { display: flex; gap: 1rem; }
+.radio-group label { display: inline-flex; align-items: center; gap: .375rem; }
+
+/* Critérios */
+#criterios-table { width: 100%; border-collapse: collapse; margin-bottom: .625rem; }
+#criterios-table th, #criterios-table td { border: .0625rem solid #e4e7ec; padding: .5rem; text-align: left; }
+#criterios-table th { background: #f2f4f7; font-weight: 700; }
+.criterio-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+}
+
+.criterio-controls > * {
+  flex: 1;
+  min-width: 7.5rem;
+}
+
+.criterio-controls input,
+.criterio-controls button {
+  width: 100%;
+}
+
+@media (max-width: 48rem) {
+  .criterio-controls > * {
+    flex-basis: 100%;
+  }
+}
+.criterio-controls button {
+  background: #34495e; color: #fff; border: 0; padding: .5rem .625rem; border-radius: .375rem; cursor: pointer;
+}
+.criterio-controls button:hover { background: #2b3d4f; }
+
+/* Pré-visualização (protocolo completo) */
+.right-panel h2 { margin-bottom: .625rem; }
+#protocol-preview {
+  white-space: pre-wrap;
+  background: #111827;
+  color: #e5e7eb;
+  padding: 1rem;
+  border-radius: .5rem;
+  border: .0625rem solid #0b1220;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: .92rem;
+  min-height: 60vh;
+}
+
+/* Botões de tabela */
+button.rem-crit {
+  background: #ef4444 !important;
+}
+button.rem-crit:hover {
+  background: #dc2626 !important;
+}
+
+/* Info box dentro de Critérios */
+.info-box {
+  background: #f9fafb;
+  border: .0625rem solid #e5e7eb;
+  border-radius: .5rem;
+  padding: .75rem;
+  margin-bottom: .875rem;
+  font-size: .9rem;
+  color: #374151;
+}
+.info-box strong { color: #111827; display: block; margin-bottom: .25rem; }
+/* Por esta nova versão: */
+.info-box ul {
+  margin: .375rem 0 .625rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Adicione estas novas regras: */
+.info-box li {
+  display: inline-block;
+  margin-right: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.info-box li strong {
+  display: inline;
+}
+
+/* Tabela de critérios mais elegante */
+#criterios-table th, #criterios-table td {
+  font-size: .9rem;
+}
+#criterios-table thead th:first-child {
+  border-top-left-radius: .375rem;
+}
+#criterios-table thead th:last-child {
+  border-top-right-radius: .375rem;
+}
+#criterios-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* Controles da tabela */
+.criterio-controls input {
+  padding: .5rem .625rem;
+  border: .0625rem solid #d0d5dd;
+  border-radius: .375rem;
+  font-size: .9rem;
+}
+.criterio-controls button {
+  padding: .5rem .75rem;
+  font-size: .9rem;
+}
+
+/* Exemplos práticos */
+.examples {
+  background: #f0f9ff;
+  border: .0625rem solid #bae6fd;
+  border-radius: .5rem;
+  padding: .75rem;
+  margin-top: .875rem;
+  font-size: .9rem;
+}
+.examples strong {
+  color: #0369a1;
+  display: block;
+  margin-bottom: .375rem;
+}
+.examples code {
+  background: #e0f2fe;
+  color: #0c4a6e;
+  padding: .125rem .3125rem;
+  border-radius: .25rem;
+  font-family: ui-monospace, monospace;
+}
+
+/* Ícone aba */
+.icon{
+  border-radius: 50%;
+}
+
+/* Ícones de informação (SVG inline) */
+.icon-info {
+  width: 1rem;
+  height: 1rem;
+  stroke: #475569;
+  fill: none;
+  stroke-width: 2;
+  margin-left: .375rem;
+  cursor: help;
+}
+.icon-info:hover {
+  stroke: #2563eb;
+}
+
+/* ---------- language-select (adicionado) ---------- */
+/* Append this at the end of styles.css */
+
+/* wrapper para o input de idioma (não muda proporções existentes) */
+.language-select {
+  position: relative; /* para dropdown absoluto no futuro */
+}
+
+/* reaproveita padding/width do input padrão; adiciona classe específica */
+.language-input {
+  width: 100%;
+  padding: .625rem .75rem; /* igual aos outros inputs já definidos */
+  border: .0625rem solid #d0d5dd;
+  border-radius: .5rem;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+/* dropdown customizável (usado no futuro quando houver JS).
+   Por enquanto é seguro ter estas regras — não afetam o datalist nativo. */
+.language-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  max-height: 15rem;
+  overflow-y: auto;
+  background: #fff;
+  border: .0625rem solid #d0d5dd;
+  border-radius: .375rem;
+  box-shadow: 0 .5rem 1rem rgba(16,24,40,0.06);
+}
+
+/* itens do dropdown custom (para uso futuro) */
+.language-item {
+  padding: .5rem .75rem;
+  cursor: pointer;
+  color: #0f172a;
+}
+.language-item:hover,
+.language-item[aria-selected="true"] {
+  background: #f2f4f7;
+}
+
+/* estado sem resultados (para uso futuro) */
+.language-noresults {
+  padding: .5rem .75rem;
+  color: #6b7280;
+}
+
+/* Sugestões de idioma (dropdown flutuante) */
+#idioma-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #fff;
+  border: .0625rem solid #d0d5dd;
+  border-radius: .375rem;
+  box-shadow: 0 .5rem 1rem rgba(16,24,40,0.06);
+  max-height: 15rem;
+  overflow-y: auto;
+  padding: .25rem 0;
+}
+
+/* Itens individuais da sugestão */
+#idioma-suggestions div {
+  padding: .5rem .75rem;
+  cursor: pointer;
+  font-size: .95rem;
+  color: #1f2d3d;
+}
+#idioma-suggestions div:hover {
+  background: #f2f4f7;
+}
+#idioma-suggestions:empty {
+  display: none;
+}
+
+/* pequenas variáveis — para facilitar overrides visuais */
+:root {
+  --lang-dd-bg: #fff;
+  --lang-dd-border: #d0d5dd;
+  --lang-dd-hover: #f2f4f7;
+}
+
+/* Modal de confirmação */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(31, 45, 61, 0.6); /* mesmo tom do texto, com transparência */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Conteúdo central do modal */
+.modal-content {
+  background: #fff;
+  border-radius: .625rem;
+  padding: 1.25rem;
+  max-width: 40rem;
+  width: 90%;
+  box-shadow: 0 .5rem 1rem rgba(16, 24, 40, 0.1);
+  border: .0625rem solid #e4e7ec;
+}
+
+/* Título do modal */
+.modal-content h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: .75rem;
+  color: #1f2d3d;
+}
+
+/* Resumo dos dados */
+#modal-summary {
+  font-size: .95rem;
+  color: #374151;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+/* Botões já usam .actions — reaproveitado */
+.modal .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+/* Reponsividade do Modal */
+@media (max-width: 30rem) {
+  .modal-content {
+    padding: 1rem;
+    font-size: .9rem;
+  }
+}
+
+/* Footer */
+footer {
+  background: #2c3e50;
+  color: #fff;
+  padding: .625rem 1.125rem;
+  display: flex; justify-content: space-between; align-items: center; gap: .75rem;
+}
+.warning { color: #fde68a; }
+
+/* 
+Este projeto é licenciado sob:
+- Documentação: CC BY-NC-SA 4.0
+- Implementações em software: AGPL-3.0
+ */

@@ -1,0 +1,290 @@
+<!-- 
+OpenPUP - Protocolo Universal de Prompt  
+Licença: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International  
+Autor: Jeanco Volfe 
+Repositório: https://github.com/engsofjvolfe/OpenPUP.git 
+-->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>OpenPUP - Protocolo Universal de Prompt</title>
+  <link class="icon" rel="icon" type="image/ico" href="../assets/favicon.ico">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>OpenPUP — Protocolo Universal de Prompt</h1>
+  </header>
+
+  <div class="container">
+    <!-- Painel Esquerdo -->
+    <div class="left-panel">
+      <div class="actions img-and-btn">
+        <img src="../assets/banner.ico" alt="Imagem" class="img-left">
+        <button id="reset-top" class="reset">Resetar</button>
+      </div>
+
+      <!-- Etapa 0 -->
+      <section class="step" id="step0">
+        <h2>
+          Modo e Idioma <span class="badge-human">Humano</span>
+          <span class="info" title="Aqui você define Idioma, Modo (Rápido/Detalhado), Público-alvo, Limites e Contexto da conversa. Esses parâmetros moldam tom e profundidade da resposta.">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+          </span>
+        </h2>
+        
+        <div class="input-group">
+          <label>Modo</label>
+          <div class="radio-group">
+            <label><input type="radio" name="modo" value="FAST" checked> Rápido</label>
+            <label><input type="radio" name="modo" value="THOROUGH"> Detalhado</label>
+          </div>
+        </div>
+
+      <div class="input-group">
+        <label>Idioma</label>
+        <input
+          type="text"
+          id="idioma_input"
+          name="idioma_input"
+          placeholder="Digite o idioma em que IA deve responder ou código ISO (ex: pt, en)"
+          autocomplete="off"
+          aria-label="Idioma (código ou nome)"
+        />
+        <div id="idioma-suggestions" class="suggestions"></div>
+        <input type="hidden" name="idioma" value="pt" />
+      </div>
+
+        <div class="input-group">
+          <label>Público-alvo</label>
+          <select name="publico">
+            <option value="leigo">Leigo</option>
+            <option value="intermediario">Intermediário</option>
+            <option value="tecnico" selected>Técnico</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label>Overflow (o que fazer se passar do limite de tokens que a ia pode gerenciar)</label>
+          <select name="overflow">
+            <option value="resumir_dados_nao_criticos" selected>resumir_dados_nao_criticos</option>
+            <option value="cortar_excesso">cortar_excesso</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label>Contexto da conversa</label>
+          <select name="contexto">
+            <option value="primeira_vez" selected>primeira_vez</option>
+            <option value="continuidade">continuidade</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Etapa 1 -->
+      <section class="step" id="step1">
+        <h2>
+          Tarefa <span class="badge-human">Humano</span>
+          <span class="info" title="Defina objetivo, formato de saída (Markdown, JSON, lista, tabela, etc) e tamanho-alvo."> 
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+          </span>
+        </h2>
+
+        <div class="input-group">
+          <label>Objetivo</label>
+          <textarea name="objetivo" placeholder="Ex.: gerar resumo sobre sustentabilidade"></textarea>
+        </div>
+
+        <div class="input-group">
+          <label>Formato de saída</label>
+          <input name="formato" list="formatos" class="language-input" placeholder="Escolha ou digite um formato">
+          <datalist id="formatos">
+            <option value="Markdown">
+            <option value="Tabela">
+            <option value="JSON">
+            <option value="Lista">
+            <option value="Texto corrido">
+          </datalist>
+        </div>
+
+        <div class="input-group">
+          <label>Tamanho-alvo</label>
+          <input name="tamanho" type="text" placeholder="Ex.: 200–300 palavras"/>
+        </div>
+      </section>
+
+      <!-- Etapa 2 -->
+      <section class="step" id="step2">
+        <h2>
+          Critérios de Priorização <span class="badge-human">Humano</span>
+          <span class="info" title="Defina o que é obrigatório, desejável ou deve ser evitado. Use códigos M, S, A, D e pesos entre -1.0 e 1.0."> 
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+          </span>
+        </h2>
+        
+        <div class="info-box">
+          <strong>Legenda dos Códigos:</strong>
+          <ul>
+            <li><strong>M</strong> = Must (obrigatório)</li>
+            <li><strong>S</strong> = Should (desejável)</li>
+            <li><strong>A</strong> = Avoid (evitar)</li>
+            <li><strong>D</strong> = Data rules (uso de dados)</li>
+          </ul>
+          <strong>Escala de Pesos:</strong>
+          <ul>
+            <li>1.0 = prioridade máxima</li>
+            <li>0.5 = desejável</li>
+            <li>-1.0 = deve ser evitado</li>
+            <li>Outros valores: nuances (0.8, -0.3...)</li>
+          </ul>
+        </div>
+
+        <table id="criterios-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Peso</th>
+              <th>Descrição do Critério</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        
+        <div class="criterio-controls">
+          <input id="crit-codigo" type="text" placeholder="Ex: M, S, A, D" />
+          <input id="crit-peso" type="number" step="0.1" min="-1.0" max="1.0" value="1.0"/>
+          <input id="crit-desc" type="text" placeholder="Ex: limite de 300 palavras, usar 3 exemplos"/>
+          <button id="add-criterio">Adicionar</button>
+        </div>
+
+        <div class="examples">
+          <strong>Exemplos:</strong>
+          <ul>
+            <li><code>M1: até 300 palavras</code> (peso: 1.0)</li>
+            <li><code>M2: usar palavras simples</code> (peso: 0.7)</li>
+            <li><code>S1: 3 exemplos práticos</code> (peso: 0.5)</li>
+            <li><code>A1: jargão sem explicar</code> (peso: -1.0)</li>
+            <li><code>D1: usar dados oficiais primeiro</code> (peso: 0.8)</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Etapa 3 -->
+      <section class="step" id="step3">
+        <h2>
+          Dados <span class="badge-human">Humano</span>
+          <span class="info" title="Forneça apenas as infomrações sobre os dados que a IA pode usar"> 
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+          </span>
+        </h2>
+        <div class="input-group">
+          <label>Dados a serem usados</label>
+          <textarea name="dados" placeholder="Descreva o que a ia pode usar como dados (fontes, textos, períodos históricos, códigos, etc)"></textarea>
+        </div>
+        <!-- <div class="input-group">
+          <label>Upload (opcional)</label>
+          <input type="file" id="upload" accept=".txt,.md,.csv,.json"/>
+        </div> -->
+      </section>
+
+      <!-- Etapa 4 -->
+      <section class="step" id="step4">
+        <h2>
+          Restrições e Condições <span class="badge-human">Humano</span>
+          <span class="info" title="Defina regras como: uso permitido de fontes externas (ex: sites), limite de perguntas que a IA pode fazer antes de responder, escopos proibidos, formatos obrigatórios e outras condições específicas.">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+          </span>
+        </h2>
+        <div class="input-group">
+          <label>Fontes externas</label>
+          <select name="external_sources">
+            <option value="permitido" selected>Sim, permitido</option>
+            <option value="negado">Não, apenas os dados fornecidos</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Máx. perguntas de esclarecimento</label>
+          <input type="number" name="max_questions" value="3" min="0"/>
+        </div>
+        <div class="input-group">
+          <label>Se não houver resposta</label>
+          <select name="if_no_response">
+            <option value="assume" selected>Assumir decisão melhor</option>
+            <option value="custom">Seguir instrução personalizada</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Limites de escopo</label>
+          <textarea name="scope_limits" placeholder="Ex: não prescrever medicamentos&#10;Ex: não citar marcas"></textarea>
+        </div>
+        <div class="input-group">
+          <label>Ferramentas/formatos obrigatórios</label>
+          <textarea name="tools_required" placeholder="Ex: Tabela com campos X,Y,Z..."></textarea>
+        </div>
+        <div class="input-group">
+          <label>Outras condições</label>
+          <textarea name="other_conditions" placeholder="Ex: não usar nada fora dos 'Dados'"></textarea>
+        </div>
+      </section>
+
+      <!-- Etapa 7 -->
+      <section class="step" id="step7">
+        <h2>
+          Auto-checagem (customizada) <span class="badge-human">Humano</span>
+          <span class="info" title="Adicione critérios extras de checagem antes da entrega, ex.: tom inspirador, fonte confiável."> 
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+          </span>
+        </h2>
+        <div class="input-group">
+          <label>Itens customizados (um por linha)</label>
+          <textarea name="custom_checklist" placeholder="Tom inspirador mantido&#10;Fonte confiável incluída"></textarea>
+        </div>
+      </section>
+          
+    <div class="actions">
+      <button class="generate">Gerar Prompt</button>
+      <button class="reset">Resetar</button>
+    </div>
+    </div>
+
+    <div id="confirmation-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <h2>Confirmação dos dados</h2>
+        <div id="modal-summary"></div>
+        <div class="actions">
+          <button id="confirm-generate">Confirmar e Gerar</button>
+          <button id="cancel-modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Painel Direito -->
+    <div class="right-panel">
+      <h2>Pré-visualização do Protocolo</h2>
+      <div id="copy-and-feedback">
+        <button id="copy-prompt">Copiar Prompt</button>
+        <span id="copy-feedback"> Prompt copiado para a área de transferência</span>
+      </div>
+
+      <pre id="protocol-preview">
+    <!-- INÍCIO DO PROMPT OPENPUP -->
+    <!-- A pré-visualização será gerada aqui -->
+      </pre>
+    </div>
+  </div>
+
+  <footer>
+    <span>OpenPUP — Licenças: CC BY-NC-SA 4.0 (docs), AGPL-3.0 (software)</span>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
+<!-- 
+Este projeto é licenciado sob:
+- Documentação: CC BY-NC-SA 4.0
+- Implementações em software: AGPL-3.0 
+-->

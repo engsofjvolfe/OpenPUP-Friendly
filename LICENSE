@@ -1,0 +1,64 @@
+# Licença do OpenPUP
+
+Este projeto é licenciado sob uma combinação de licenças para proteger tanto a documentação quanto as implementações em software.
+
+---
+
+## 1. Documentação e Uso Manual
+
+Todo o conteúdo textual (ex.: `PROTOCOLO.txt`, `README.md`, `GUIA_EXPLICATIVO.md`, etc.) é licenciado sob:
+
+**Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**
+
+Você pode:
+- **Compartilhar** — copiar e redistribuir o material em qualquer suporte ou formato.
+- **Adaptar** — remixar, transformar e criar a partir do material.
+
+De acordo com os seguintes termos:
+- **Atribuição** — Você deve dar o crédito apropriado, fornecer um link para a licença e indicar se mudanças foram feitas.
+- **NãoComercial** — Você não pode usar o material para fins comerciais.
+- **Compartilhamento pela mesma licença** — Se você remixar, transformar ou criar a partir do material, deve distribuir suas contribuições sob a mesma licença.
+- **Sem restrições adicionais** — Você não pode aplicar termos jurídicos ou medidas de caráter tecnológico que restrinjam legalmente outros de fazerem algo que a licença permita.
+
+Veja o texto completo da licença em: [Creative Commons BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+---
+
+## 2. Implementações em Software
+
+Qualquer **código-fonte** (ex.: scripts, interfaces, bibliotecas) que implemente o Protocolo OpenPUP deve ser licenciado sob:
+
+**GNU Affero General Public License v3.0 (AGPL-3.0)**
+
+Você pode:
+- Usar, modificar e distribuir o software livremente.
+
+De acordo com os seguintes termos:
+- **Código-fonte aberto**: Qualquer modificação ou distribuição do software deve incluir o código-fonte.
+- **Compartilhamento sob a mesma licença**: Derivados devem ser licenciados sob AGPL-3.0.
+- **Atribuição**: Deve incluir uma cópia desta licença e os créditos ao autor original.
+
+Veja o texto completo da licença em: [GNU AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html)
+
+---
+
+## 3. Uso Comercial
+
+Uso comercial do Protocolo OpenPUP ou de suas implementações **requer uma licença especial**.
+Entre em contato: [openpup@proton.me](mailto:openpup@proton.me).
+
+---
+
+## 4. Marca Registrada
+
+"OpenPUP" é uma marca registrada. Uso não autorizado do nome ou logotipo em produtos ou serviços comerciais é proibido.
+
+---
+
+## 5. Isenção de Garantia
+
+O Protocolo OpenPUP é fornecido "como está", sem garantia de qualquer tipo.
+
+---
+
+™ 2025 Jeanco Volfe
