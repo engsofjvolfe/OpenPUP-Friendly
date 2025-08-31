@@ -421,6 +421,155 @@ document.getElementById('add-criterio').addEventListener('click', function () {
     });
   });
 
+  /* ===================================================
+   Ajustes de Acessibilidade
+   =================================================== */
+
+// ---------- Modal acessível ----------
+const modalContent = modal?.querySelector(".modal-content");
+const openGenerateBtn = document.querySelector(".generate");
+let lastFocusedElement = null;
+
+function openModal() {
+  lastFocusedElement = document.activeElement;
+  modal.style.display = "block";
+  modal.setAttribute("aria-hidden", "false");
+
+  // foco no título do modal
+  const modalTitle = modal.querySelector("h2");
+  modalTitle?.focus();
+
+  // prender foco dentro do modal
+  trapFocus(modal);
+}
+
+function closeModal() {
+  modal.style.display = "none";
+  modal.setAttribute("aria-hidden", "true");
+  if (lastFocusedElement) {
+    lastFocusedElement.focus();
+  }
+}
+
+function trapFocus(element) {
+  const focusableEls = element.querySelectorAll(
+    'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'
+  );
+  const firstEl = focusableEls[0];
+  const lastEl = focusableEls[focusableEls.length - 1];
+
+  element.addEventListener("keydown", function(e) {
+    if (e.key === "Tab") {
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl.focus();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
+      }
+    }
+  });
+}
+
+// evento global para fechar modal com ESC
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape" && modal.style.display === "block") {
+    closeModal();
+  }
+});
+
+// eventos do modal
+openGenerateBtn?.addEventListener("click", openModal);
+cancelBtn?.addEventListener("click", closeModal);
+confirmBtn?.addEventListener("click", () => {
+  closeModal();
+  // aqui a geração original do prompt continua funcionando normalmente
+});
+
+// ---------- Feedback de cópia ----------
+const copyBtn = document.getElementById("copy-prompt");
+const copyFeedback = document.getElementById("copy-feedback");
+const protocolPreview = document.getElementById("protocol-preview");
+
+// inicializa o botão como desabilitado
+if (copyBtn) copyBtn.disabled = true;
+
+// observar mudanças no conteúdo do preview
+const observer = new MutationObserver(() => {
+  const content = protocolPreview.innerText.trim();
+  copyBtn.disabled = content.length === 0;
+});
+
+if (protocolPreview) {
+  observer.observe(protocolPreview, { childList: true, subtree: true, characterData: true });
+}
+
+copyBtn?.addEventListener("click", () => {
+  const text = protocolPreview.innerText.trim();
+  if (!text) return;
+
+  navigator.clipboard.writeText(text).then(() => {
+    copyFeedback.classList.add("active");
+    copyFeedback.textContent = "Prompt copiado com sucesso!";
+    setTimeout(() => {
+      copyFeedback.classList.remove("active");
+      copyFeedback.textContent = "";
+    }, 2000);
+  });
+});
+
+
+    // ---------- Sugestões de idioma ----------
+    if (idiomaInput && suggestionsBox) {
+      idiomaInput.addEventListener("input", () => {
+        const value = idiomaInput.value.toLowerCase().trim();
+        suggestionsBox.innerHTML = "";
+
+        if (value.length > 0) {
+          idiomaInput.setAttribute("aria-expanded", "true");
+          // Exemplo: lista estática simples, pode ser ligada ao original
+          const suggestions = ["pt", "en", "es", "fr", "de"].filter(lang =>
+            lang.startsWith(value)
+          );
+          suggestions.forEach((lang, index) => {
+            const option = document.createElement("div");
+            option.setAttribute("role", "option");
+            option.id = `idioma-option-${index}`;
+            option.textContent = lang;
+            option.tabIndex = 0;
+            option.addEventListener("click", () => {
+              idiomaInput.value = lang;
+              idiomaInput.setAttribute("aria-expanded", "false");
+              suggestionsBox.innerHTML = "";
+            });
+            option.addEventListener("keydown", e => {
+              if (e.key === "Enter") {
+                idiomaInput.value = lang;
+                idiomaInput.setAttribute("aria-expanded", "false");
+                suggestionsBox.innerHTML = "";
+              }
+            });
+            suggestionsBox.appendChild(option);
+          });
+        } else {
+          idiomaInput.setAttribute("aria-expanded", "false");
+        }
+      });
+    }
+
+    // ---------- Botões de info acessíveis ----------
+    document.querySelectorAll("button.info").forEach(btn => {
+      btn.setAttribute("aria-expanded", "false");
+      btn.addEventListener("click", () => {
+        const expanded = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", String(!expanded));
+      });
+    });
+
 });
 
 
