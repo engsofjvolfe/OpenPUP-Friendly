@@ -148,7 +148,7 @@ Tamanho-alvo: ${formElements.tamanho.value}
 ## 2) Critérios (priorização do que importa)
 M: A IA deve cumprir todas as etapas do protocolo, com execução obrigatória das seções 5 a 9. Falhas nessas etapas devem acionar bloqueio na etapa 8. # peso = 1.0  
 M: A IA deve interromper o fluxo se qualquer etapa anterior estiver incompleta, inválida ou não validada. Não é permitido pular etapas. # peso = 1.0
-${criterios.map(c => `  ${c}`).join('\n')}
+${criterios.map(c => `${c}`).join('\n')}
 
 ---
 ## 3) Dados (fonte da verdade)
@@ -249,24 +249,61 @@ IA — faça:
         });
     });
 
-  document.getElementById('add-criterio').addEventListener('click', function () {
-    const codigo = document.getElementById('crit-codigo').value;
-    const peso = document.getElementById('crit-peso').value;
-    const descricao = document.getElementById('crit-desc').value;
+// Validação de Códigos e pesos
+const codigoInput = document.getElementById('crit-codigo');
+const addButton = document.getElementById('add-criterio');
 
-    if (codigo && peso && descricao) {
-      const newRow = formElements.criteriosTable.insertRow();
-      newRow.innerHTML = `
-        <td>${codigo}</td>
-        <td>${peso}</td>
-        <td>${descricao}</td>
-        <td><button class="rem-crit">Remover</button></td>
-      `;
-      document.getElementById('crit-codigo').value = '';
-      document.getElementById('crit-peso').value = '1.0';
-      document.getElementById('crit-desc').value = '';
+// Função para validar o código
+function validateCode(codigo) {
+    const codigosValidos = ['M', 'S', 'A', 'D'];
+    return codigosValidos.includes(codigo.toUpperCase());
+}
+
+// Validação em tempo real
+codigoInput.addEventListener('input', function() {
+    const valor = this.value.toUpperCase();
+    
+    if (valor && !validateCode(valor)) {
+        this.style.borderColor = 'red';
+        addButton.disabled = true;
+    } else {
+        this.style.borderColor = '';
+        addButton.disabled = false;
     }
-  });
+});
+
+// Validação ao sair do campo
+codigoInput.addEventListener('blur', function() {
+    if (this.value && !validateCode(this.value)) {
+        this.setCustomValidity('Digite apenas M, S, A ou D');
+        this.reportValidity();
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+// Tooltip de ajuda
+codigoInput.title = "Digite apenas: M (Must), S (Should), A (Avoid) ou D (Data)";
+
+document.getElementById('add-criterio').addEventListener('click', function () {
+  const codigo = document.getElementById('crit-codigo').value;
+  const peso = document.getElementById('crit-peso').value;
+  const descricao = document.getElementById('crit-desc').value;
+
+  // Validação final antes de adicionar
+  if (codigo && peso && descricao && validateCode(codigo)) {
+    const newRow = formElements.criteriosTable.insertRow();
+    newRow.innerHTML = `
+      <td>${codigo.toUpperCase()}</td>
+      <td>${peso}</td>
+      <td>${descricao}</td>
+      <td><button class="rem-crit">Remover</button></td>
+    `;
+    document.getElementById('crit-codigo').value = '';
+    document.getElementById('crit-peso').value = '1.0';
+    document.getElementById('crit-desc').value = '';
+  }
+});
 
   formElements.criteriosTable.addEventListener('click', function (e) {
     if (e.target.classList.contains('rem-crit')) {

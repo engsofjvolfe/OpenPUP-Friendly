@@ -34,7 +34,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
           <span class="info" title="Aqui você define Idioma, Modo (Rápido/Detalhado), Público-alvo, Limites e Contexto da conversa. Esses parâmetros moldam tom e profundidade da resposta.">
             <span class="info" title="Aqui você define Idioma, Modo (Rápido/Detalhado), Público-alvo, Limites e Contexto da conversa. Esses parâmetros moldam tom e profundidade da resposta.">
               <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" fill="#2563eb"/>
+                <circle cx="12" cy="12" r="10" fill="#000"/>
                 <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
                 <line x1="12" y1="12" x2="12" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
               </svg>
@@ -96,7 +96,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
           Tarefa <span class="badge-human">Humano</span>
           <span class="info" title="Defina objetivo, formato de saída (Markdown, JSON, lista, tabela, etc) e tamanho-alvo."> 
             <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" fill="#2563eb"/>
+              <circle cx="12" cy="12" r="10" fill="#000"/>
               <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
               <line x1="12" y1="12" x2="12" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
             </svg>
@@ -126,20 +126,20 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
         </div>
       </section>
 
-      <!-- Etapa 2 -->
+     <!-- Etapa 2 -->
       <section class="step" id="step2">
         <h2>
           Critérios de Priorização <span class="badge-human">Humano</span>
           <span class="info" title="Defina o que é obrigatório, desejável ou deve ser evitado. Use códigos M, S, A, D e pesos entre -1.0 e 1.0."> 
-          <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" fill="#2563eb"/>
-            <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-            <line x1="12" y1="12" x2="12" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-          </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" fill="#000"/>
+              <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+              <line x1="12" y1="12" x2="12" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+            </svg>
           </span>
         </h2>
         
-        <div class="info-box">
+        <div class="card info-box">
           <strong>Legenda dos Códigos:</strong>
           <ul>
             <li><strong>M</strong> = Must (obrigatório)</li>
@@ -156,33 +156,33 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
           </ul>
         </div>
 
-        <table id="criterios-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Peso</th>
-              <th>Descrição do Critério</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        
-        <div class="criterio-controls">
-          <input id="crit-codigo" type="text" placeholder="Ex: M, S, A, D" />
-          <input id="crit-peso" type="number" step="0.1" min="-1.0" max="1.0" value="1.0"/>
-          <input id="crit-desc" type="text" placeholder="Ex: limite de 300 palavras, usar 3 exemplos"/>
-          <button id="add-criterio">Adicionar</button>
+        <div class="card">
+          <table id="criterios-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Peso</th>
+                <th>Descrição do Critério</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          
+          <div class="criterio-controls">
+            <input id="crit-codigo" type="text" placeholder="Ex: M, S, A, D" />
+            <input id="crit-peso" type="number" step="0.1" min="-1.0" max="1.0" value="1.0"/>
+            <input id="crit-desc" type="text" placeholder="Ex: limite de 300 palavras, usar 3 exemplos"/>
+            <button id="add-criterio">Adicionar</button>
+          </div>
         </div>
 
-        <div class="examples">
+        <div class="card examples">
           <strong>Exemplos:</strong>
-          <ul>
-            <li><code>M1: até 300 palavras</code> (peso: 1.0)</li>
-            <li><code>M2: usar palavras simples</code> (peso: 0.7)</li>
-            <li><code>S1: 3 exemplos práticos</code> (peso: 0.5)</li>
-            <li><code>A1: jargão sem explicar</code> (peso: -1.0)</li>
-            <li><code>D1: usar dados oficiais primeiro</code> (peso: 0.8)</li>
-          </ul>
+          <div class="example-item"><code>M1: até 300 palavras</code> (peso: 1.0)</div>
+          <div class="example-item"><code>M2: usar palavras simples</code> (peso: 0.7)</div>
+          <div class="example-item"><code>S1: 3 exemplos práticos</code> (peso: 0.5)</div>
+          <div class="example-item"><code>A1: jargão sem explicar</code> (peso: -1.0)</div>
+          <div class="example-item"><code>D1: usar dados oficiais primeiro</code> (peso: 0.8)</div>
         </div>
       </section>
 
@@ -192,7 +192,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
           Dados <span class="badge-human">Humano</span>
           <span class="info" title="Forneça apenas as infomrações sobre os dados que a IA pode usar"> 
             <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" fill="#2563eb"/>
+              <circle cx="12" cy="12" r="10" fill="#000"/>
               <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
               <line x1="12" y1="12" x2="12" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
             </svg>
@@ -214,7 +214,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
           Restrições e Condições <span class="badge-human">Humano</span>
           <span class="info" title="Defina regras como: uso permitido de fontes externas (ex: sites), limite de perguntas que a IA pode fazer antes de responder, escopos proibidos, formatos obrigatórios e outras condições específicas.">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" fill="#2563eb"/>
+              <circle cx="12" cy="12" r="10" fill="#000"/>
               <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
               <line x1="12" y1="12" x2="12" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
             </svg>
@@ -258,7 +258,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
           Auto-checagem (customizada) <span class="badge-human">Humano</span>
           <span class="info" title="Adicione critérios extras de checagem antes da entrega, ex.: tom inspirador, fonte confiável."> 
               <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" fill="#2563eb"/>
+                <circle cx="12" cy="12" r="10" fill="#000"/>
                 <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
                 <line x1="12" y1="12" x2="12" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
               </svg>
