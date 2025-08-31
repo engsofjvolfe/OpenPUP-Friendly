@@ -4,8 +4,8 @@
 
 Todas as mudanças significativas neste projeto serão documentadas neste arquivo e seguem o formato [Keep a Changelog 1.1](https://keepachangelog.com/pt-BR/1.1.0/) e a [Versão Semântica 2.0.0](https://semver.org/lang/pt-BR/).
 
+
 ## Unreleased
--  Acessibilidade
 -  Melhorias na tabela de legendas do campo Critérios de priorização
 -  Histórico de logs com data e título (minímo) para registro dos prompts
 -  Menu de navegação no topo com campos para explicação, guias, manifesto
@@ -15,8 +15,26 @@ Todas as mudanças significativas neste projeto serão documentadas neste arquiv
 -  Adição de banner do projeto
 -  Alteração do fluxo da etapa 9 deixando-a como última a ser gerada (após o prompt principal)
 
-## [1.1.0] – 2025-08-31
 
+## [1.2.0] – 2025-08-31
+### Adicionado
+- Landmarks **ARIA** e rótulos associados no `index.html` para melhorar acessibilidade.
+- Classe `.sr-only` e `.sr-only-focusable` em `styles.css` para suportar leitores de tela.
+- Função de **trap de foco** no `script.js` para modais acessíveis.
+- Observador `MutationObserver` em `script.js` para habilitar/desabilitar automaticamente o botão de copiar (`#copy-prompt`).
+- Feedback de cópia dinâmico com `aria-live` e mensagem mais orgânica.
+
+### Modificado
+- Estilo de foco global para inputs, botões, selects e textareas, garantindo consistência sem alterar o design original.
+- `#copy-feedback` agora usa cor neutra, itálico e transição suave, tornando o feedback visual mais integrado ao layout.
+- Botão **"Copiar Prompt"** inicia desabilitado e só é ativado quando a pré-visualização contém conteúdo.
+
+### Corrigido
+- Modal agora fecha corretamente com tecla **Esc** e mantém foco restaurado no elemento que o abriu.
+- Campo de seleção de idioma com sugestões passa a atualizar corretamente os atributos `aria-expanded` e `aria-activedescendant`.
+
+
+## [1.1.0] – 2025-08-31
 ### Adicionado
 - Implementada validação nos campos **Código** para garantir integridade dos dados adicionados no campo Critérios de Priorização 
 - Criada a função `validateCode` em `script.js`, responsável por validar os códigos permitidos (`M`, `A`, `S`, `D`) e converter automaticamente a entrada do usuário para letras maiúsculas.

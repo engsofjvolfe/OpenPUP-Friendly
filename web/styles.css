@@ -99,6 +99,17 @@ header h1 { font-size: 1.25rem; font-weight: 600; }
 .input-group textarea { min-height: 6.875rem; resize: vertical; }
 .input-group input[list] { font-size: 1rem; }
 
+/* Resetar outline padrão e aplicar estilo customizado */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus,
+a:focus {
+  outline: none;
+  box-shadow: 0 0 0 .125rem rgba(0, 0, 0, 0.40);
+  border-radius: .25rem;
+}
+
 .radio-group { display: flex; gap: 1rem; flex-wrap: wrap; }
 .radio-group label { display: inline-flex; align-items: center; gap: .375rem; }
 
@@ -309,6 +320,101 @@ header h1 { font-size: 1.25rem; font-weight: 600; }
   display: flex; justify-content: flex-end; gap: .5rem; flex-wrap: wrap;
 }
 
+
+/* Botão de copiar prompt desabilitado */
+#copy-prompt:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Feedback de cópia  */
+#copy-feedback {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.85em;
+  color: #555; /* tom neutro, integrado ao layout */
+  font-style: italic;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+}
+#copy-feedback.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+
+/* ===================================================
+   Ajustes de Acessibilidade
+   =================================================== */
+
+/* Classe para elementos apenas para leitores de tela */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* Tornar visível ao focar (ex: link "Ir para o conteúdo") */
+.sr-only-focusable:active,
+.sr-only-focusable:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Estilo de foco visível para acessibilidade (respeitando contraste WCAG) */
+:focus {
+  outline: 3px solid #005fcc; /* azul contraste */
+  outline-offset: 2px;
+}
+
+/* Feedback de cópia (aria-live) */
+#copy-feedback {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.9em;
+  color: #007b00; /* verde suave, já usado no tema */
+  visibility: hidden;
+}
+#copy-feedback.active {
+  visibility: visible;
+}
+
+/* Modal acessível */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.5); /* fundo translúcido */
+}
+.modal-content {
+  background-color: #fff;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 6px;
+  width: 90%;
+  max-width: 600px;
+}
+.modal .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 /* Footer */
 footer {
   background: #2c3e50;
@@ -339,8 +445,6 @@ footer {
     box-shadow: 0 .125rem .625rem rgba(16, 24, 40, .06);
   }
 }
-
-
 
 
 /*  
