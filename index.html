@@ -11,21 +11,37 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>OpenPUP - Protocolo Universal de Prompt</title>
-
   <!-- Favicon -->
   <link class="icon" rel="icon" type="image/ico" href="assets/favicon.ico">
-
   <!-- CSS -->
   <link rel="stylesheet" href="web/styles.css">
 </head>
 <body>
-  <!-- Link de pular para conteúdo -->
-  <a href="#main" class="sr-only-focusable" style="
-    position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;
-  ">Ir para o conteúdo principal</a>
-
   <header role="banner">
     <h1 id="page-title">OpenPUP — Protocolo Universal de Prompt</h1>
+      <div class="card intro-box" role="note" aria-label="Introdução ao OpenPUP">
+        <div class="intro-text">
+            <p><strong>Bem-vindo ao OpenPUP!</strong></p>
+            <p>
+              Esta ferramenta ajuda você a criar mensagens (prompts) bem estruturadas para usar com inteligência artificial.  
+            </p>
+            <p>
+              Basta preencher os campos abaixo, etapa por etapa, e o OpenPUP monta automaticamente um prompt que você poderá copiar e colar em seu agente de IA preferido.
+            </p>
+            <p>
+              Se tiver dúvidas, clique nos ícones de ajuda ao lado dos títulos — eles explicam cada parte da interface.
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="10" fill="#000"/>
+                <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                <line x1="12" y1="12" x2="12" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <p class="intro-minor-text">
+                OpenPUP não é infalível. Estruture, Experimente, Quebre, Reconstrua.
+              </p>
+            </p>
+        </div>
+          <button id="close-intro" type="button" class="intro-close" aria-label="Fechar introdução">✕</button>
+      </div>
   </header>
 
   <div class="container" id="main" role="main" aria-labelledby="page-title">
@@ -85,7 +101,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
         </div>
 
         <div class="input-group">
-          <label for="overflow">Overflow (o que fazer se passar do limite de tokens)</label>
+          <label for="overflow">O que fazer se passar do limite que a IA pode gerar</label>
           <select id="overflow" name="overflow">
             <option value="resumir_dados_nao_criticos" selected>resumir_dados_nao_criticos</option>
             <option value="cortar_excesso">cortar_excesso</option>
@@ -105,7 +121,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
       <section class="step" id="step1" aria-labelledby="step1-title">
         <h2 id="step1-title">
           Tarefa <span class="badge-human">Humano</span>
-          <button class="info" type="button" aria-label="Ajuda: Tarefa" title="Defina objetivo, formato de saída (Markdown, JSON, lista, tabela, etc) e tamanho-alvo.">
+          <button class="info" type="button" aria-label="Ajuda: Tarefa" title="Defina objetivo, formato em que a IA deve entregar a resposta (Texto corrido, História, Tabela, Lista, Markdown, JSON etc) e tamanho da resposta que a IA deve gerar (prefira respostas com até 300 palavras).">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle cx="12" cy="12" r="10" fill="#000"/>
               <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
@@ -115,24 +131,24 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
         </h2>
 
         <div class="input-group">
-          <label for="objetivo">Objetivo</label>
+          <label for="objetivo">O que a IA deve fazer</label>
           <textarea id="objetivo" name="objetivo" placeholder="Ex.: gerar resumo sobre sustentabilidade"></textarea>
         </div>
 
         <div class="input-group">
-          <label for="formato">Formato de saída</label>
-          <input id="formato" name="formato" list="formatos" class="language-input" placeholder="Escolha ou digite um formato">
+          <label for="formato">Como a IA deve responder</label>
+          <input id="formato" name="formato" list="formatos" class="language-input" placeholder="Digite ou escolha o formato">
           <datalist id="formatos">
-            <option value="Markdown">
             <option value="Tabela">
-            <option value="JSON">
-            <option value="Lista">
             <option value="Texto corrido">
+              <option value="Lista">
+            <option value="Markdown">
+            <option value="JSON">
           </datalist>
         </div>
 
         <div class="input-group">
-          <label for="tamanho">Tamanho-alvo</label>
+          <label for="tamanho">Tamanho da resposta que a IA deve gerar</label>
           <input id="tamanho" name="tamanho" type="text" placeholder="Ex.: 200–300 palavras"/>
         </div>
       </section>
@@ -140,8 +156,8 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
       <!-- Etapa 2 -->
       <section class="step" id="step2" aria-labelledby="step2-title">
         <h2 id="step2-title">
-          Critérios de Priorização <span class="badge-human">Humano</span>
-          <button class="info" type="button" aria-label="Ajuda: Critérios de Priorização" title="Defina o que é obrigatório, desejável ou deve ser evitado. Use códigos M, S, A, D e pesos entre -1.0 e 1.0.">
+          Prioridades <span class="badge-human">Humano</span>
+          <button class="info" type="button" aria-label="Ajuda: Critérios de Priorização" title="Defina o que é obrigatório, desejável ou deve ser evitado. Use códigos M, S, A, D e pesos entre -1.0 e 1.0. Os pesos definem a importância que a IA deve dar à tarefa que você definiu, sendo -1.0 o menor e 1.0 o maior">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle cx="12" cy="12" r="10" fill="#000"/>
               <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
@@ -153,18 +169,28 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
         <div class="card info-box" role="note" aria-label="Legenda e Escala de Pesos">
           <strong>Legenda dos Códigos:</strong>
           <ul>
-            <li><strong>M</strong> = Must (obrigatório)</li>
-            <li><strong>S</strong> = Should (desejável)</li>
-            <li><strong>A</strong> = Avoid (evitar)</li>
-            <li><strong>D</strong> = Data rules (uso de dados)</li>
+            <li><strong>M</strong> = Obrigatório</li>
+            <li><strong>S</strong> = Desejável</li>
+            <li><strong>A</strong> = Evitar</li>
+            <li><strong>D</strong> = Uso de dados</li>
           </ul>
           <strong>Escala de Pesos:</strong>
           <ul>
             <li>1.0 = prioridade máxima</li>
             <li>0.5 = desejável</li>
             <li>-1.0 = deve ser evitado</li>
-            <li>Outros valores: nuances (0.8, -0.3...)</li>
+            <li>Utilize quaisquer valores entre -1.0 e 1.0 - (0.8, -0.3...)</li>
           </ul>
+        </div>
+
+        <div class="card examples" aria-label="Exemplos de critérios">
+          <strong>Exemplos:</strong>
+          <div class="example-item"><code>M1: até 300 palavras</code> (peso: 1.0)</div>
+          <div class="example-item"><code>M2: usar palavras simples</code> (peso: 0.7)</div>
+          <div class="example-item"><code>S1: 3 exemplos práticos</code> (peso: 0.5)</div>
+          <div class="example-item"><code>A1: jargão sem explicar</code> (peso: -1.0)</div>
+          <div class="example-item"><code>D1: usar dados oficiais primeiro</code> (peso: 0.8)</div>
+          <div class="example-item"><code>D1: usar dados de universidades reconhecidas após analisar dados oficiais</code> (peso: 0.8)</div>
         </div>
 
         <div class="card">
@@ -175,7 +201,6 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
                 <th scope="col">Código</th>
                 <th scope="col">Peso</th>
                 <th scope="col">Descrição do Critério</th>
-                <th scope="col">Ações</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -195,22 +220,13 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
             <button id="add-criterio" type="button">Adicionar</button>
           </div>
         </div>
-
-        <div class="card examples" aria-label="Exemplos de critérios">
-          <strong>Exemplos:</strong>
-          <div class="example-item"><code>M1: até 300 palavras</code> (peso: 1.0)</div>
-          <div class="example-item"><code>M2: usar palavras simples</code> (peso: 0.7)</div>
-          <div class="example-item"><code>S1: 3 exemplos práticos</code> (peso: 0.5)</div>
-          <div class="example-item"><code>A1: jargão sem explicar</code> (peso: -1.0)</div>
-          <div class="example-item"><code>D1: usar dados oficiais primeiro</code> (peso: 0.8)</div>
-        </div>
       </section>
 
       <!-- Etapa 3 -->
       <section class="step" id="step3" aria-labelledby="step3-title">
         <h2 id="step3-title">
           Dados <span class="badge-human">Humano</span>
-          <button class="info" type="button" aria-label="Ajuda: Dados" title="Forneça apenas as informações sobre os dados que a IA pode usar">
+          <button class="info" type="button" aria-label="Ajuda: Dados" title="Forneça apenas as informações sobre os dados que a IA pode usar. Pode ser um simples texto que você escreva aqui ou algum arquivo a ser enviado para ela">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle cx="12" cy="12" r="10" fill="#000"/>
               <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
@@ -228,7 +244,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
       <section class="step" id="step4" aria-labelledby="step4-title">
         <h2 id="step4-title">
           Restrições e Condições <span class="badge-human">Humano</span>
-          <button class="info" type="button" aria-label="Ajuda: Restrições e Condições" title="Defina regras como: uso permitido de fontes externas, limite de perguntas de esclarecimento, escopos proibidos e outras condições específicas.">
+          <button class="info" type="button" aria-label="Ajuda: Restrições e Condições" title="Defina regras como: A IA pode usar fontes externas para responder? Quantas perguntas a IA pode/deve fazer se ela tiver dúvida? O que mais a IA não deve fazer? Outras condições (extra).">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle cx="12" cy="12" r="10" fill="#000"/>
               <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
@@ -237,33 +253,33 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
           </button>
         </h2>
         <div class="input-group">
-          <label for="external_sources">Fontes externas</label>
+          <label for="external_sources"> Fontes externas</label>
           <select id="external_sources" name="external_sources">
             <option value="permitido" selected>Sim, permitido</option>
             <option value="negado">Não, apenas os dados fornecidos</option>
           </select>
         </div>
         <div class="input-group">
-          <label for="max_questions">Máx. perguntas de esclarecimento</label>
+          <label for="max_questions">Quantas perguntas a IA pode fazer</label>
           <input id="max_questions" type="number" name="max_questions" value="3" min="0"/>
         </div>
         <div class="input-group">
-          <label for="if_no_response">Se não houver resposta</label>
+          <label for="if_no_response">O que fazer se não houver resposta</label>
           <select id="if_no_response" name="if_no_response">
             <option value="assume" selected>Assumir decisão melhor</option>
             <option value="custom">Seguir instrução personalizada</option>
           </select>
         </div>
         <div class="input-group">
-          <label for="scope_limits">Limites de escopo</label>
+          <label for="scope_limits">O que mais a IA não deve fazer (um por linha)</label>
           <textarea id="scope_limits" name="scope_limits" placeholder="Ex: não prescrever medicamentos&#10;Ex: não citar marcas"></textarea>
         </div>
         <div class="input-group">
-          <label for="tools_required">Ferramentas/formatos obrigatórios</label>
+          <label for="tools_required">Outros formatos obrigatórios</label>
           <textarea id="tools_required" name="tools_required" placeholder="Ex: Tabela com campos X,Y,Z..."></textarea>
         </div>
         <div class="input-group">
-          <label for="other_conditions">Outras condições</label>
+          <label for="other_conditions">Outras condições (se houver)</label>
           <textarea id="other_conditions" name="other_conditions" placeholder="Ex: não usar nada fora dos 'Dados'"></textarea>
         </div>
       </section>
@@ -271,8 +287,8 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
       <!-- Etapa 7 -->
       <section class="step" id="step7" aria-labelledby="step7-title">
         <h2 id="step7-title">
-          Auto-checagem (customizada) <span class="badge-human">Humano</span>
-          <button class="info" type="button" aria-label="Ajuda: Auto-checagem" title="Adicione critérios extras de checagem antes da entrega, ex.: tom inspirador, fonte confiável.">
+          Auto-checagem <span class="badge-human">Humano</span>
+          <button class="info" type="button" aria-label="Ajuda: Auto-checagem" title="Adicione itens que a IA deve checar, funciona como uma verificação que a própria IA faz antes de te entregar a resposta">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon-info" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle cx="12" cy="12" r="10" fill="#000"/>
               <line x1="12" y1="8" x2="12.01" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
@@ -282,7 +298,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
         </h2>
         <div class="input-group">
           <label for="custom_checklist">Itens customizados (um por linha)</label>
-          <textarea id="custom_checklist" name="custom_checklist" placeholder="Tom inspirador mantido&#10;Fonte confiável incluída"></textarea>
+          <textarea id="custom_checklist" name="custom_checklist" placeholder="Escreveu o texto no formato que pedi&#10;Utilizou fontes confiáveis conforme solicitado"></textarea>
         </div>
       </section>
           
@@ -307,20 +323,56 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
     <!-- Painel Direito -->
     <div class="right-panel" role="region" aria-label="Pré-visualização do protocolo">
       <h2 id="preview-title">Pré-visualização do Protocolo</h2>
-      <div id="copy-and-feedback">
+      <!-- <div class="copy-and-feedback">
         <button id="copy-prompt" type="button" aria-describedby="copy-feedback">Copiar Prompt</button>
         <span id="copy-feedback" role="status" aria-live="polite">Prompt copiado para a área de transferência</span>
-      </div>
-
-      <pre id="protocol-preview" aria-labelledby="preview-title" aria-live="polite">
+      </div> -->
+      <pre id="protocol-preview" aria-labelledby="preview-title" aria-live="polite"> 
     <!-- INÍCIO DO PROMPT OPENPUP -->
     <!-- A pré-visualização será gerada aqui -->
       </pre>
+      <div class="copy-and-feedback">
+        <button id="copy-prompt" type="button" aria-describedby="copy-feedback">Copiar Prompt</button>
+        <span id="copy-feedback" role="status" aria-live="polite">Prompt copiado para a área de transferência</span>
+      </div> 
     </div>
   </div>
 
   <footer role="contentinfo">
     <span>OpenPUP — Licenças: CC BY-NC-SA 4.0 (docs), AGPL-3.0 (software)</span>
+    <nav class="footer-links" aria-label="Redes e contatos">
+      <!-- GitHub principal -->
+      <a href="https://github.com/engsofjvolfe/OpenPUP" aria-label="GitHub principal">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="white" role="img">
+          <title>GitHub principal</title>
+          <path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.92.58.11.79-.25.79-.56v-2.02c-3.2.7-3.87-1.54-3.87-1.54-.53-1.35-1.3-1.71-1.3-1.71-1.06-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.73 1.27 3.4.97.11-.75.41-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.3 1.2-3.11-.12-.3-.52-1.52.11-3.17 0 0 .98-.31 3.2 1.19a11.1 11.1 0 0 1 5.83 0c2.22-1.5 3.2-1.19 3.2-1.19.63 1.65.23 2.87.11 3.17.75.81 1.2 1.85 1.2 3.11 0 4.43-2.69 5.4-5.25 5.68.42.36.8 1.08.8 2.18v3.23c0 .31.21.68.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5z"/>
+        </svg>
+      </a>
+
+      <!-- GitHub Web -->
+      <a href="https://github.com/engsofjvolfe/OpenPUP-Friendly" aria-label="GitHub Web">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="white" role="img">
+          <title>GitHub Web</title>
+          <path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.92.58.11.79-.25.79-.56v-2.02c-3.2.7-3.87-1.54-3.87-1.54-.53-1.35-1.3-1.71-1.3-1.71-1.06-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.73 1.27 3.4.97.11-.75.41-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.3 1.2-3.11-.12-.3-.52-1.52.11-3.17 0 0 .98-.31 3.2 1.19a11.1 11.1 0 0 1 5.83 0c2.22-1.5 3.2-1.19 3.2-1.19.63 1.65.23 2.87.11 3.17.75.81 1.2 1.85 1.2 3.11 0 4.43-2.69 5.4-5.25 5.68.42.36.8 1.08.8 2.18v3.23c0 .31.21.68.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5z"/>
+        </svg>
+      </a>
+
+      <!-- Discord -->
+      <a href="https://discord.gg/mezuExdw" aria-label="Discord">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="white" role="img">
+          <title>Discord</title>
+          <path d="M20.317 4.369a19.791 19.791 0 0 0-4.885-1.515.07.07 0 0 0-.073.035c-.211.375-.444.864-.608 1.249a18.219 18.219 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.249.07.07 0 0 0-.073-.035 19.736 19.736 0 0 0-4.885 1.515.064.064 0 0 0-.03.027C.533 9.045-.32 13.579.099 18.057a.082.082 0 0 0 .031.056 19.911 19.911 0 0 0 5.993 3.058.07.07 0 0 0 .076-.027c.461-.63.873-1.295 1.226-1.994a.07.07 0 0 0-.038-.098 13.107 13.107 0 0 1-1.872-.9.07.07 0 0 1-.007-.117c.126-.094.252-.19.373-.287a.07.07 0 0 1 .071-.01c3.927 1.793 8.18 1.793 12.061 0a.07.07 0 0 1 .072.009c.122.097.247.193.374.288a.07.07 0 0 1-.006.117 12.299 12.299 0 0 1-1.873.899.07.07 0 0 0-.038.099c.36.698.772 1.362 1.225 1.993a.07.07 0 0 0 .076.028 19.888 19.888 0 0 0 6.002-3.058.082.082 0 0 0 .031-.056c.5-5.177-.838-9.673-3.548-13.661a.061.061 0 0 0-.03-.028zM8.02 15.331c-1.183 0-2.156-1.085-2.156-2.419 0-1.333.955-2.418 2.156-2.418 1.21 0 2.174 1.094 2.156 2.418 0 1.334-.955 2.419-2.156 2.419zm7.974 0c-1.183 0-2.156-1.085-2.156-2.419 0-1.333.955-2.418 2.156-2.418 1.21 0 2.174 1.094 2.156 2.418 0 1.334-.946 2.419-2.156 2.419z"/>
+        </svg>
+      </a>
+
+      <!-- Email -->
+      <a href="mailto:openpup@proton.me" aria-label="Enviar e-mail para openpup@proton.me">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <title>Email</title>
+          <path d="M2 4h20c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H2c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm0 2v.01L12 13 22 6.01V6H2zm0 2.99V18h20V8.99l-10 7.01-10-7.01z"/>
+        </svg>
+      </a>  
+    </nav>
   </footer>
 
   <!-- JS -->
