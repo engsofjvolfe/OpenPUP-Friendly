@@ -6,14 +6,39 @@ Todas as mudanças significativas neste projeto serão documentadas neste arquiv
 
 
 ## Unreleased
+-  Modularização e padronização de idioma do código
+-  Tradução do projeto para  Espanho e Inglês
 -  Melhorias na tabela de legendas do campo Critérios de priorização
 -  Histórico de logs com data e título (minímo) para registro dos prompts
 -  Menu de navegação no topo com campos para explicação, guias, manifesto
 -  Implementação de seleção por idioma (EN e ES primeiro)
--  Campor de média de tokens, palavras, caracteres por prompt gerado
--  Adição de redes e contatos no footer
+-  Campo para exibir média de tokens, palavras, caracteres por prompt gerado
 -  Adição de banner do projeto
 -  Alteração do fluxo da etapa 9 deixando-a como última a ser gerada (após o prompt principal)
+-  Adicionar botão para mostrar/esconder pré-visualização de prompt
+  
+
+## [1.3.0] – 2025-08-31
+### Adicionado
+- Caixa de boas-vindas com instrução rápida ao usuário, utilizando `<div class="card intro-box" role="note" aria-label="Introdução ao OpenPUP">`
+- Estilos dedicados para `.intro-box`, `.intro-close`, `.intro-text`, `.intro-minor-text` em `styles.css`, garantindo visual limpo e acessível
+- Script para exibir/esconder a caixa de introdução com botão de fechar, mantendo foco e acessibilidade
+- Labels HTML revisados para esclarecer o uso de cada campo ao usuário médio
+
+### Modificado
+- Posição do campo EXEMPLOS na seção de Códigos e Pesos ajustada para melhorar o fluxo de leitura
+- Estilo da folha de estilos atualizado para suportar a nova CAIXA DE BOAS VINDAS sem interferir no layout existente
+- Script principal ajustado para integrar a lógica da introdução (BOAS VINDAS) e manter consistência com o restante da interface
+- Textos explicativos nos ícones de ajuda ("i") foram ampliados para maior clareza
+- Botão **"Copiar Prompt"** reposicionada para testar melhora em experiência do usuário
+- Footer reestruturado com abordagem mobile first, melhorias de acessibilidade, responsividade e inclusão de ícones GitHub, Discord e e-mail
+
+### Corrigido
+- Ajustes visuais e semânticos em labels e descrições para melhorar compreensão geral
+- Pequenas correções de espaçamento e alinhamento em elementos interativos
+- Removido bloco duplicado no JS `// ---------- Sugestões de idioma ----------` no fim do arquivo
+- Ajuste da função `showLanguageSuggestions()` para atualizar atributos ARIA corretamente
+- Estes dois últimos ajustes visam corrigir a exibição da lista de idiomas
 
 
 ## [1.2.0] – 2025-08-31

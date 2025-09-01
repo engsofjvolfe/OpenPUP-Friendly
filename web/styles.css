@@ -47,7 +47,7 @@ header h1 { font-size: 1.25rem; font-weight: 600; }
 .actions button:hover { background: #2d7fb7; }
 .hdr-hint { opacity: .8; font-size: .85rem; }
 
-.img-and-btn, #copy-and-feedback {
+.img-and-btn, .copy-and-feedback {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -75,6 +75,50 @@ header h1 { font-size: 1.25rem; font-weight: 600; }
   padding: 1rem;
   border-radius: 0;
   box-shadow: none;
+}
+
+/* Caixa de introdução */
+.intro-box {
+  display: none; /* esconde por padrão */
+  position: relative;
+  padding: 1rem;
+  margin: 1rem 0;
+  background: #f9f9f9;
+  border-left: 4px solid #005fcc;
+  border-radius: 4px;
+  font-size: 0.95em;
+  color: #333;
+  width: 100%;
+}
+
+/* Botão de fechar dentro da introdução */
+.intro-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #666;
+}
+.intro-close:hover {
+  color: #000;
+}
+
+.intro-text{
+  display: flex;
+  flex-direction: column;
+}
+
+.intro-text p{
+  margin-top: 0.425rem;
+}
+
+.intro-minor-text{
+  text-align: end;
+  font-size: 0.8rem;
+  padding: 0.5rem;
 }
 
 /* Steps */
@@ -320,7 +364,6 @@ a:focus {
   display: flex; justify-content: flex-end; gap: .5rem; flex-wrap: wrap;
 }
 
-
 /* Botão de copiar prompt desabilitado */
 #copy-prompt:disabled {
   opacity: 0.5;
@@ -415,13 +458,68 @@ a:focus {
   gap: 10px;
 }
 
-/* Footer */
+/* Footer - Mobile First */
 footer {
   background: #2c3e50;
   color: #fff;
   padding: .625rem 1.125rem;
-  display: flex; justify-content: space-between; align-items: center; gap: .75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .75rem;
+  flex-wrap: wrap;
 }
+
+/* Links de redes sociais */
+.footer-links {
+  display: flex;
+  gap: .5rem;
+  margin-top: .5rem;
+}
+
+.footer-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+/* Hover para desktop */
+.footer-links a:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Foco e toque para acessibilidade */
+.footer-links a:focus,
+.footer-links a:active {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Estilo dos ícones SVG */
+.footer-links svg {
+  width: 20px;
+  height: 20px;
+  fill: white;
+}
+
+/* Layout para telas maiores */
+@media (min-width: 600px) {
+  footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-links {
+    margin-top: 0;
+  }
+}
+
 .warning { color: #fde68a; }
 
 /* ---------- Breakpoints Mobile-first ---------- */

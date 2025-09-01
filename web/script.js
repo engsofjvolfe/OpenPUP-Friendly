@@ -68,35 +68,43 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function showLanguageSuggestions(query) {
-    const matches = languages.filter(lang =>
-      lang.name.toLowerCase().includes(query) ||
-      lang.code.toLowerCase().startsWith(query)
-    ).slice(0, 10);
+  const matches = languages.filter(lang =>
+    lang.name.toLowerCase().includes(query) ||
+    lang.code.toLowerCase().startsWith(query)
+  ).slice(0, 10);
 
-    suggestionsBox.innerHTML = '';
-    if (matches.length === 0) {
+  suggestionsBox.innerHTML = '';
+
+  if (matches.length === 0) {
+    suggestionsBox.style.display = 'none';
+    idiomaInput.setAttribute("aria-expanded", "false");
+    return;
+  }
+
+  matches.forEach((lang, index) => {
+    const div = document.createElement('div');
+    div.classList.add('suggestion-item');
+    div.setAttribute("role", "option");
+    div.id = `idioma-option-${index}`;
+    div.textContent = `${lang.name} (${lang.code})`;
+    div.dataset.code = lang.code;
+    div.dataset.name = lang.name;
+    div.tabIndex = 0;
+
+    div.addEventListener('click', () => {
+      idiomaInput.value = lang.name;
+      formElements.idiomaHidden.value = lang.code;
+      suggestionsBox.innerHTML = '';
       suggestionsBox.style.display = 'none';
-      return;
-    }
-
-    matches.forEach(lang => {
-      const div = document.createElement('div');
-      div.classList.add('suggestion-item');
-      div.textContent = `${lang.name} (${lang.code})`;
-      div.dataset.code = lang.code;
-      div.dataset.name = lang.name;
-      div.tabIndex = 0;
-      div.addEventListener('click', () => {
-        idiomaInput.value = lang.name;
-        formElements.idiomaHidden.value = lang.code;
-        suggestionsBox.innerHTML = '';
-        suggestionsBox.style.display = 'none';
-      });
-      suggestionsBox.appendChild(div);
+      idiomaInput.setAttribute("aria-expanded", "false");
     });
 
-    suggestionsBox.style.display = 'block';
-  }
+    suggestionsBox.appendChild(div);
+  });
+
+  suggestionsBox.style.display = 'block';
+  idiomaInput.setAttribute("aria-expanded", "true");
+}
 
   idiomaInput.addEventListener('input', () => {
     const query = idiomaInput.value.toLowerCase();
@@ -113,6 +121,26 @@ document.addEventListener('DOMContentLoaded', function () {
       suggestionsBox.style.display = 'none';
     }
   });
+
+  // ---------- Caixa de introdução ---------
+    const introBox = document.querySelector(".intro-box");
+    const closeIntroBtn = document.getElementById("close-intro");
+
+    if (!introBox || !closeIntroBtn) return; // se não existir, sai
+
+    // verifica se o usuário já fechou a introdução
+    const introClosed = localStorage.getItem("introClosed");
+
+    // só mostra se nunca foi fechada
+    if (!introClosed) {
+      introBox.style.display = "block";
+    }
+
+    // botão para fechar
+    closeIntroBtn.addEventListener("click", () => {
+      introBox.style.display = "none";
+      localStorage.setItem("introClosed", "true"); // marca que já viu
+    });
 
   function generateProtocol() {
     const criterios = [];
@@ -146,6 +174,11 @@ Tamanho-alvo: ${formElements.tamanho.value}
 
 ---
 ## 2) Critérios (priorização do que importa)
+- M = MUST
+- S = SHOULD
+- A = AVOID
+- D = DATA (instruções de como os dados serão utilizados)
+
 M: A IA deve cumprir todas as etapas do protocolo, com execução obrigatória das seções 5 a 9. Falhas nessas etapas devem acionar bloqueio na etapa 8. # peso = 1.0  
 M: A IA deve interromper o fluxo se qualquer etapa anterior estiver incompleta, inválida ou não validada. Não é permitido pular etapas. # peso = 1.0
 ${criterios.map(c => `${c}`).join('\n')}
@@ -522,44 +555,6 @@ copyBtn?.addEventListener("click", () => {
   });
 });
 
-
-    // ---------- Sugestões de idioma ----------
-    if (idiomaInput && suggestionsBox) {
-      idiomaInput.addEventListener("input", () => {
-        const value = idiomaInput.value.toLowerCase().trim();
-        suggestionsBox.innerHTML = "";
-
-        if (value.length > 0) {
-          idiomaInput.setAttribute("aria-expanded", "true");
-          // Exemplo: lista estática simples, pode ser ligada ao original
-          const suggestions = ["pt", "en", "es", "fr", "de"].filter(lang =>
-            lang.startsWith(value)
-          );
-          suggestions.forEach((lang, index) => {
-            const option = document.createElement("div");
-            option.setAttribute("role", "option");
-            option.id = `idioma-option-${index}`;
-            option.textContent = lang;
-            option.tabIndex = 0;
-            option.addEventListener("click", () => {
-              idiomaInput.value = lang;
-              idiomaInput.setAttribute("aria-expanded", "false");
-              suggestionsBox.innerHTML = "";
-            });
-            option.addEventListener("keydown", e => {
-              if (e.key === "Enter") {
-                idiomaInput.value = lang;
-                idiomaInput.setAttribute("aria-expanded", "false");
-                suggestionsBox.innerHTML = "";
-              }
-            });
-            suggestionsBox.appendChild(option);
-          });
-        } else {
-          idiomaInput.setAttribute("aria-expanded", "false");
-        }
-      });
-    }
 
     // ---------- Botões de info acessíveis ----------
     document.querySelectorAll("button.info").forEach(btn => {
