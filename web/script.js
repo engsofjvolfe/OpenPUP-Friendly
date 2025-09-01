@@ -6,19 +6,19 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
 */
 
 // script.js
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener("DOMContentLoaded", function () {
   let languages = [];
 
   // Carregar lista de idiomas do JSON
-  fetch('../data/languages.json')
-    .then(response => response.json())
-    .then(data => {
+  fetch("../data/languages.json")
+    .then((response) => response.json())
+    .then((data) => {
       languages = data;
     })
-    .catch(err => console.error("Erro ao carregar languages.json:", err));
+    .catch((err) => console.error("Erro ao carregar languages.json:", err));
 
-  const idiomaInput = document.getElementById('idioma_input');
-  const suggestionsBox = document.getElementById('idioma-suggestions');
+  const idiomaInput = document.getElementById("idioma_input");
+  const suggestionsBox = document.getElementById("idioma-suggestions");
 
   const formElements = {
     modo: () => document.querySelector('input[name="modo"]:checked'),
@@ -35,126 +35,311 @@ document.addEventListener('DOMContentLoaded', function () {
     ifNoResponse: document.querySelector('select[name="if_no_response"]'),
     scopeLimits: document.querySelector('textarea[name="scope_limits"]'),
     toolsRequired: document.querySelector('textarea[name="tools_required"]'),
-    otherConditions: document.querySelector('textarea[name="other_conditions"]'),
-    customChecklist: document.querySelector('textarea[name="custom_checklist"]'),
-    preview: document.getElementById('protocol-preview'),
-    criteriosTable: document.querySelector('#criterios-table tbody')
+    otherConditions: document.querySelector(
+      'textarea[name="other_conditions"]'
+    ),
+    customChecklist: document.querySelector(
+      'textarea[name="custom_checklist"]'
+    ),
+    preview: document.getElementById("protocol-preview"),
+    criteriosTable: document.querySelector("#criterios-table tbody"),
   };
 
   function buildModalSummary() {
+    // Função auxiliar para campos opcionais
+    const formatField = (field) =>
+      field && field.value ? field.value : "<em>Não definido</em>";
+
+    // Contagem de critérios
+    const countCriterios =
+      formElements.criteriosTable.querySelectorAll("tr").length;
+    const criteriosText =
+      countCriterios === 1 ? "1 adicionado" : `${countCriterios} adicionados`;
+
     const resumoHTML = `
-        <div class="info-box">
-        <strong>Modo:</strong> ${formElements.modo().value}<br>
-        <strong>Idioma:</strong> ${formElements.idiomaHidden.value}<br>
-        <strong>Público:</strong> ${formElements.publico.value}<br>
-        <strong>Objetivo:</strong> ${formElements.objetivo.value || '<em>Não definido</em>'}<br>
-        <strong>Formato:</strong> ${formElements.formato.value}<br>
-        <strong>Tamanho:</strong> ${formElements.tamanho.value || '<em>Não definido</em>'}<br>
-        <strong>Critérios:</strong> ${formElements.criteriosTable.querySelectorAll('tr').length} adicionados<br>
-        <strong>Dados:</strong> ${formElements.dados.value ? 'Preenchido' : '<em>Não definido</em>'}
-        </div>`;
+    <div class="info-box">
+      <strong>Modo:</strong> ${formElements.modo().value}<br>
+      <strong>Idioma:</strong> ${formElements.idiomaHidden.value}<br>
+      <strong>Público:</strong> ${formElements.publico.value}<br>
+      <strong>Overflow:</strong> ${formElements.overflow.value}<br>
+      <strong>Contexto:</strong> ${formElements.contexto.value}<br>
+      <strong>Objetivo:</strong> ${formatField(formElements.objetivo)}<br>
+      <strong>Formato:</strong> ${formatField(formElements.formato)}<br>
+      <strong>Tamanho:</strong> ${formatField(formElements.tamanho)}<br>
+      <strong>Critérios:</strong> ${criteriosText}<br>
+      <strong>Dados:</strong> ${
+        formElements.dados.value ? "Preenchido" : "<em>Não definido</em>"
+      }<br>
+      <strong>Fontes externas:</strong> ${
+        formElements.externalSources.value
+      }<br>
+      <strong>Máx. de perguntas:</strong> ${formElements.maxQuestions.value}<br>
+      <strong>Se não houver resposta:</strong> ${
+        formElements.ifNoResponse.value
+      }<br>
+      <strong>Limites de escopo:</strong> ${formatField(
+        formElements.scopeLimits
+      )}<br>
+      <strong>Ferramentas necessárias:</strong> ${formatField(
+        formElements.toolsRequired
+      )}<br>
+      <strong>Outras condições:</strong> ${formatField(
+        formElements.otherConditions
+      )}<br>
+      <strong>Checklist personalizado:</strong> ${
+        formElements.customChecklist.value
+      }<br>
+    </div>
+  `;
+
     summaryBox.innerHTML = resumoHTML;
-   }
+  }
 
   function clearField(field) {
-    if (field.tagName === 'TEXTAREA' || field.tagName === 'INPUT') {
-      field.value = '';
+    if (field.tagName === "TEXTAREA" || field.tagName === "INPUT") {
+      field.value = "";
     }
   }
 
   function clearChecklistAndCriterios() {
-    formElements.customChecklist.value = '';
-    formElements.criteriosTable.innerHTML = '';
+    formElements.customChecklist.value = "";
+    formElements.criteriosTable.innerHTML = "";
   }
 
   function showLanguageSuggestions(query) {
-  const matches = languages.filter(lang =>
-    lang.name.toLowerCase().includes(query) ||
-    lang.code.toLowerCase().startsWith(query)
-  ).slice(0, 10);
+    const matches = languages
+      .filter(
+        (lang) =>
+          lang.name.toLowerCase().includes(query) ||
+          lang.code.toLowerCase().startsWith(query)
+      )
+      .slice(0, 10);
 
-  suggestionsBox.innerHTML = '';
+    suggestionsBox.innerHTML = "";
 
-  if (matches.length === 0) {
-    suggestionsBox.style.display = 'none';
-    idiomaInput.setAttribute("aria-expanded", "false");
-    return;
-  }
-
-  matches.forEach((lang, index) => {
-    const div = document.createElement('div');
-    div.classList.add('suggestion-item');
-    div.setAttribute("role", "option");
-    div.id = `idioma-option-${index}`;
-    div.textContent = `${lang.name} (${lang.code})`;
-    div.dataset.code = lang.code;
-    div.dataset.name = lang.name;
-    div.tabIndex = 0;
-
-    div.addEventListener('click', () => {
-      idiomaInput.value = lang.name;
-      formElements.idiomaHidden.value = lang.code;
-      suggestionsBox.innerHTML = '';
-      suggestionsBox.style.display = 'none';
+    if (matches.length === 0) {
+      suggestionsBox.style.display = "none";
       idiomaInput.setAttribute("aria-expanded", "false");
+      return;
+    }
+
+    matches.forEach((lang, index) => {
+      const div = document.createElement("div");
+      div.classList.add("suggestion-item");
+      div.setAttribute("role", "option");
+      div.id = `idioma-option-${index}`;
+      div.textContent = `${lang.name} (${lang.code})`;
+      div.dataset.code = lang.code;
+      div.dataset.name = lang.name;
+      div.tabIndex = 0;
+
+      div.addEventListener("click", () => {
+        idiomaInput.value = lang.name;
+        formElements.idiomaHidden.value = lang.code;
+        suggestionsBox.innerHTML = "";
+        suggestionsBox.style.display = "none";
+        idiomaInput.setAttribute("aria-expanded", "false");
+      });
+
+      suggestionsBox.appendChild(div);
     });
 
-    suggestionsBox.appendChild(div);
-  });
+    suggestionsBox.style.display = "block";
+    idiomaInput.setAttribute("aria-expanded", "true");
+  }
 
-  suggestionsBox.style.display = 'block';
-  idiomaInput.setAttribute("aria-expanded", "true");
-}
-
-  idiomaInput.addEventListener('input', () => {
+  idiomaInput.addEventListener("input", () => {
     const query = idiomaInput.value.toLowerCase();
     if (query.length < 1) {
-      suggestionsBox.style.display = 'none';
+      suggestionsBox.style.display = "none";
       return;
     }
     showLanguageSuggestions(query);
   });
 
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.input-group')) {
-      suggestionsBox.innerHTML = '';
-      suggestionsBox.style.display = 'none';
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".input-group")) {
+      suggestionsBox.innerHTML = "";
+      suggestionsBox.style.display = "none";
     }
   });
 
-  // ---------- Caixa de introdução ---------
-    const introBox = document.querySelector(".intro-box");
-    const closeIntroBtn = document.getElementById("close-intro");
+  // ---------- Modal de introdução ----------
+  const introModal = document.getElementById("intro-modal");
+  const closeIntroBtn = document.getElementById("close-intro");
+  const focusReturn = document.getElementById("intro-focus-return");
 
-    if (!introBox || !closeIntroBtn) return; // se não existir, sai
+  if (!introModal || !closeIntroBtn || !focusReturn) {
+    // se não existir, sai (evita erros)
+    console.warn("intro modal elements missing");
+  } else {
+    let lastFocusedElementIntro = null;
+    let releaseIntroFocus = null; // função para remover o trap de foco
 
-    // verifica se o usuário já fechou a introdução
-    const introClosed = localStorage.getItem("introClosed");
+    // Função robusta de trap de foco que devolve um cleanup.
+    // Se você já tem uma função trapFocus(...) global, tentamos reutilizá-la
+    // e usar seu retorno — caso não exista retorno, usamos fallback simples.
+    function trapFocusReturn(modal) {
+      // tenta usar trapFocus existente (se retornar cleanup)
+      if (typeof trapFocus === "function") {
+        try {
+          const maybeCleanup = trapFocus(modal);
+          if (typeof maybeCleanup === "function") return maybeCleanup;
+        } catch (e) {
+          // se trapFocus lançar ou não retornar cleanup, prosseguimos com fallback
+        }
+      }
 
-    // só mostra se nunca foi fechada
-    if (!introClosed) {
-      introBox.style.display = "block";
+      // fallback: implementação simples de trancamento de tab
+      const focusableSelector =
+        'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])';
+      const nodes = Array.from(modal.querySelectorAll(focusableSelector));
+      if (!nodes.length) return null;
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+
+      function onKey(e) {
+        if (e.key === "Tab") {
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+        if (e.key === "Escape") {
+          closeIntroModal();
+        }
+      }
+
+      modal.addEventListener("keydown", onKey);
+      return () => modal.removeEventListener("keydown", onKey);
     }
 
-    // botão para fechar
-    closeIntroBtn.addEventListener("click", () => {
-      introBox.style.display = "none";
-      localStorage.setItem("introClosed", "true"); // marca que já viu
+    // Abre o modal
+    function openIntroModal() {
+      lastFocusedElementIntro = document.activeElement; // guarda quem estava focado
+      // mostra visualmente (CSS usa aria-hidden para exibir, mas mantemos display também)
+      introModal.style.display = "flex";
+      introModal.setAttribute("aria-hidden", "false");
+
+      // impede scrolling no body enquanto modal aberto (opcional)
+      document.body.style.overflow = "hidden";
+
+      // aplica trap de foco e guarda função de release
+      releaseIntroFocus = trapFocusReturn(introModal);
+
+      // foca o título (tem tabindex="-1")
+      const modalTitle =
+        introModal.querySelector("#intro-title") ||
+        introModal.querySelector("h2");
+      modalTitle?.focus();
+    }
+
+    // Fecha o modal (com cuidado: remove trap, move foco pra fora, só então set aria-hidden)
+    function closeIntroModal() {
+      // 1) remove trap de foco imediatamente (para liberar o foco)
+      if (typeof releaseIntroFocus === "function") {
+        try {
+          releaseIntroFocus();
+        } catch (e) {
+          /* nada */
+        }
+        releaseIntroFocus = null;
+      }
+
+      // 2) determina alvo para devolver foco (fallback: elemento dedicado ou document.body)
+      const returnTarget =
+        lastFocusedElementIntro || focusReturn || document.body;
+      const addedTabindex =
+        !returnTarget.hasAttribute || !returnTarget.hasAttribute("tabindex");
+
+      // 3) garante que o returnTarget seja focável e foca nele
+      try {
+        if (
+          !returnTarget.hasAttribute ||
+          !returnTarget.hasAttribute("tabindex")
+        ) {
+          returnTarget.setAttribute("tabindex", "-1");
+        }
+        returnTarget.focus({ preventScroll: true });
+      } catch (e) {
+        // foco pode falhar; seguimos adiante
+      }
+
+      // 4) Pequeno atraso para garantir que o navegador atualize foco antes de setar aria-hidden
+      setTimeout(() => {
+        // esconde visualmente e para leitores de tela
+        introModal.setAttribute("aria-hidden", "true");
+        introModal.style.display = "none";
+
+        // restaura overflow do body
+        document.body.style.overflow = "";
+
+        // marca persistência
+        localStorage.setItem("introClosed", "true");
+
+        // limpa tabindex adicionado se era só temporário (não remova do fallback `focusReturn`)
+        if (returnTarget !== focusReturn && returnTarget !== document.body) {
+          // apenas remove se adicionamos temporariamente
+          try {
+            if (
+              returnTarget.getAttribute &&
+              returnTarget.getAttribute("tabindex") === "-1" &&
+              returnTarget !== lastFocusedElementIntro
+            ) {
+              returnTarget.removeAttribute("tabindex");
+            }
+          } catch (e) {}
+        }
+      }, 20); // 20ms é suficiente para dar tempo ao navegador de atualizar o foco
+    }
+
+    // abre automaticamente se nunca foi fechado
+    window.addEventListener("DOMContentLoaded", () => {
+      const introClosed = localStorage.getItem("introClosed");
+      if (!introClosed) {
+        openIntroModal();
+      }
     });
 
+    // eventos do botão fechar
+    closeIntroBtn?.addEventListener("click", closeIntroModal);
+
+    // ESC global (caso não esteja tratado pelo trap)
+    document.addEventListener("keydown", function (e) {
+      if (
+        e.key === "Escape" &&
+        introModal.getAttribute("aria-hidden") === "false"
+      ) {
+        closeIntroModal();
+      }
+    });
+  }
+
+  // Gerar Protocolo
   function generateProtocol() {
     const criterios = [];
-    formElements.criteriosTable.querySelectorAll('tr').forEach(row => {
+    formElements.criteriosTable.querySelectorAll("tr").forEach((row) => {
       const codigo = row.cells[0].textContent;
       const peso = row.cells[1].textContent;
       const descricao = row.cells[2].textContent;
       criterios.push(`${codigo}: ${descricao} # peso = ${peso}`);
     });
 
-    const scopeLimits = formElements.scopeLimits.value.split('\n').filter(line => line.trim() !== '');
-    const toolsRequired = formElements.toolsRequired.value.split('\n').filter(line => line.trim() !== '');
-    const otherConditions = formElements.otherConditions.value.split('\n').filter(line => line.trim() !== '');
-    const customChecklist = formElements.customChecklist.value.split('\n').filter(line => line.trim() !== '');
+    const scopeLimits = formElements.scopeLimits.value
+      .split("\n")
+      .filter((line) => line.trim() !== "");
+    const toolsRequired = formElements.toolsRequired.value
+      .split("\n")
+      .filter((line) => line.trim() !== "");
+    const otherConditions = formElements.otherConditions.value
+      .split("\n")
+      .filter((line) => line.trim() !== "");
+    const customChecklist = formElements.customChecklist.value
+      .split("\n")
+      .filter((line) => line.trim() !== "");
 
     let protocol = `<!-- INÍCIO DO PROMPT OPENPUP -->
 ## 0) Modo e Idioma
@@ -181,7 +366,7 @@ Tamanho-alvo: ${formElements.tamanho.value}
 
 M: A IA deve cumprir todas as etapas do protocolo, com execução obrigatória das seções 5 a 9. Falhas nessas etapas devem acionar bloqueio na etapa 8. # peso = 1.0  
 M: A IA deve interromper o fluxo se qualquer etapa anterior estiver incompleta, inválida ou não validada. Não é permitido pular etapas. # peso = 1.0
-${criterios.map(c => `${c}`).join('\n')}
+${criterios.map((c) => `${c}`).join("\n")}
 
 ---
 ## 3) Dados (fonte da verdade)
@@ -195,11 +380,11 @@ external_sources: ${formElements.externalSources.value}
 clarification_policy: max_questions: ${formElements.maxQuestions.value}
 if_no_response: ${formElements.ifNoResponse.value}
 scope_limits:
-${scopeLimits.map(sl => `  - ${sl}`).join('\n')}
+${scopeLimits.map((sl) => `  - ${sl}`).join("\n")}
 tools_required:
-${toolsRequired.map(tr => `  - ${tr}`).join('\n')}
+${toolsRequired.map((tr) => `  - ${tr}`).join("\n")}
 other_conditions:
-${otherConditions.map(oc => `  - ${oc}`).join('\n')}
+${otherConditions.map((oc) => `  - ${oc}`).join("\n")}
 
 ---
 ## 5) Análise Prévia (não é a entrega) — ETAPA OBRIGATÓRIA
@@ -242,7 +427,7 @@ IA — faça (marque a lista em Markdown e explicar brevemente e com verdade cad
 - [ ] Tamanho e formato conforme Tarefa
 - [ ] Uso exclusivo dos Dados
 - [ ] Incertezas qualificadas
-${customChecklist.map(cc => `- [ ] ${cc}`).join('\n')}
+${customChecklist.map((cc) => `- [ ] ${cc}`).join("\n")}
 - [ ] Etapa 7 concluída sem pular itens
 
 ---
@@ -269,96 +454,99 @@ IA — faça:
 
 <!-- FIM DO PROMPT -->`;
 
-   formElements.preview.textContent = protocol;
+    formElements.preview.textContent = protocol;
   }
 
   //   Copiar Prompt
-  document.getElementById('copy-prompt').addEventListener('click', () => {
+  document.getElementById("copy-prompt").addEventListener("click", () => {
     const text = formElements.preview.textContent;
-        navigator.clipboard.writeText(text).then(() => {
-            const feedback = document.getElementById('copy-feedback');
-            feedback.style.display = 'inline';
-            setTimeout(() => feedback.style.display = 'none', 2000);
-        });
+    navigator.clipboard.writeText(text).then(() => {
+      const feedback = document.getElementById("copy-feedback");
+      feedback.style.display = "inline";
+      setTimeout(() => (feedback.style.display = "none"), 2000);
     });
+  });
 
-// Validação de Códigos e pesos
-const codigoInput = document.getElementById('crit-codigo');
-const addButton = document.getElementById('add-criterio');
+  // Validação de Códigos e pesos
+  const codigoInput = document.getElementById("crit-codigo");
+  const addButton = document.getElementById("add-criterio");
 
-// Função para validar o código
-function validateCode(codigo) {
-    const codigosValidos = ['M', 'S', 'A', 'D'];
+  // Função para validar o código
+  function validateCode(codigo) {
+    const codigosValidos = ["M", "S", "A", "D"];
     return codigosValidos.includes(codigo.toUpperCase());
-}
+  }
 
-// Validação em tempo real
-codigoInput.addEventListener('input', function() {
+  // Validação em tempo real
+  codigoInput.addEventListener("input", function () {
     const valor = this.value.toUpperCase();
-    
+
     if (valor && !validateCode(valor)) {
-        this.style.borderColor = 'red';
-        addButton.disabled = true;
+      this.style.borderColor = "red";
+      addButton.disabled = true;
     } else {
-        this.style.borderColor = '';
-        addButton.disabled = false;
+      this.style.borderColor = "";
+      addButton.disabled = false;
     }
-});
+  });
 
-// Validação ao sair do campo
-codigoInput.addEventListener('blur', function() {
+  // Validação ao sair do campo
+  codigoInput.addEventListener("blur", function () {
     if (this.value && !validateCode(this.value)) {
-        this.setCustomValidity('Digite apenas M, S, A ou D');
-        this.reportValidity();
+      this.setCustomValidity("Digite apenas M, S, A ou D");
+      this.reportValidity();
     } else {
-        this.setCustomValidity('');
+      this.setCustomValidity("");
     }
-});
+  });
 
-// Tooltip de ajuda
-codigoInput.title = "Digite apenas: M (Must), S (Should), A (Avoid) ou D (Data)";
+  // Tooltip de ajuda
+  codigoInput.title =
+    "Digite apenas: M (Must), S (Should), A (Avoid) ou D (Data)";
 
-document.getElementById('add-criterio').addEventListener('click', function () {
-  const codigo = document.getElementById('crit-codigo').value;
-  const peso = document.getElementById('crit-peso').value;
-  const descricao = document.getElementById('crit-desc').value;
+  document
+    .getElementById("add-criterio")
+    .addEventListener("click", function () {
+      const codigo = document.getElementById("crit-codigo").value;
+      const peso = document.getElementById("crit-peso").value;
+      const descricao = document.getElementById("crit-desc").value;
 
-  // Validação final antes de adicionar
-  if (codigo && peso && descricao && validateCode(codigo)) {
-    const newRow = formElements.criteriosTable.insertRow();
-    newRow.innerHTML = `
+      // Validação final antes de adicionar
+      if (codigo && peso && descricao && validateCode(codigo)) {
+        const newRow = formElements.criteriosTable.insertRow();
+        newRow.innerHTML = `
       <td>${codigo.toUpperCase()}</td>
       <td>${peso}</td>
       <td>${descricao}</td>
       <td><button class="rem-crit">Remover</button></td>
     `;
-    document.getElementById('crit-codigo').value = '';
-    document.getElementById('crit-peso').value = '1.0';
-    document.getElementById('crit-desc').value = '';
-  }
-});
+        document.getElementById("crit-codigo").value = "";
+        document.getElementById("crit-peso").value = "1.0";
+        document.getElementById("crit-desc").value = "";
+      }
+    });
 
-  formElements.criteriosTable.addEventListener('click', function (e) {
-    if (e.target.classList.contains('rem-crit')) {
-      e.target.closest('tr').remove();
+  formElements.criteriosTable.addEventListener("click", function (e) {
+    if (e.target.classList.contains("rem-crit")) {
+      e.target.closest("tr").remove();
     }
   });
 
-  document.querySelectorAll('.reset').forEach(button => {
-    button.addEventListener('click', function () {
+  document.querySelectorAll(".reset").forEach((button) => {
+    button.addEventListener("click", function () {
       document.querySelector('input[name="modo"][value="FAST"]').checked = true;
-      idiomaInput.value = '';
-      formElements.idiomaHidden.value = 'pt';
-      formElements.publico.value = 'tecnico';
-      formElements.overflow.value = 'resumir_dados_nao_criticos';
-      formElements.contexto.value = 'primeira_vez';
+      idiomaInput.value = "";
+      formElements.idiomaHidden.value = "pt";
+      formElements.publico.value = "tecnico";
+      formElements.overflow.value = "resumir_dados_nao_criticos";
+      formElements.contexto.value = "primeira_vez";
       clearField(formElements.objetivo);
-      formElements.formato.value = 'Markdown';
+      formElements.formato.value = "Markdown";
       clearField(formElements.tamanho);
       clearField(formElements.dados);
-      formElements.externalSources.value = 'permitido';
-      formElements.maxQuestions.value = '3';
-      formElements.ifNoResponse.value = 'assume';
+      formElements.externalSources.value = "permitido";
+      formElements.maxQuestions.value = "3";
+      formElements.ifNoResponse.value = "assume";
       clearField(formElements.scopeLimits);
       clearField(formElements.toolsRequired);
       clearField(formElements.otherConditions);
@@ -366,44 +554,44 @@ document.getElementById('add-criterio').addEventListener('click', function () {
       clearField(formElements.toolsRequired);
       clearField(formElements.otherConditions);
       clearChecklistAndCriterios();
-      formElements.preview.textContent = '';
+      formElements.preview.textContent = "";
     });
   });
 
   // Modal de confirmação
-  const modal = document.getElementById('confirmation-modal');
-  const confirmBtn = document.getElementById('confirm-generate');
-  const cancelBtn = document.getElementById('cancel-modal');
-  const summaryBox = document.getElementById('modal-summary');
+  const modal = document.getElementById("confirmation-modal");
+  const confirmBtn = document.getElementById("confirm-generate");
+  const cancelBtn = document.getElementById("cancel-modal");
+  const summaryBox = document.getElementById("modal-summary");
 
   // Exibir modal com resumo
-    document.querySelectorAll('.generate').forEach(button => {
-        button.addEventListener('click', () => {
-            buildModalSummary();
-            modal.style.display = 'flex';
-        });
+  document.querySelectorAll(".generate").forEach((button) => {
+    button.addEventListener("click", () => {
+      buildModalSummary();
+      modal.style.display = "flex";
     });
+  });
 
   // Confirmar e gerar
-  confirmBtn.addEventListener('click', () => {
+  confirmBtn.addEventListener("click", () => {
     generateProtocol();
-    modal.style.display = 'none';
+    modal.style.display = "none";
   });
 
   // Cancelar
-  cancelBtn.addEventListener('click', () => {
-    modal.style.display = 'none';
+  cancelBtn.addEventListener("click", () => {
+    modal.style.display = "none";
   });
 
   // Tooltips customizados para ícones de informação
-  document.querySelectorAll('.info').forEach(infoIcon => {
-    const tooltipText = infoIcon.getAttribute('title');
+  document.querySelectorAll(".info").forEach((infoIcon) => {
+    const tooltipText = infoIcon.getAttribute("title");
     if (!tooltipText) return;
 
-    infoIcon.removeAttribute('title');
+    infoIcon.removeAttribute("title");
 
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip-box';
+    const tooltip = document.createElement("div");
+    tooltip.className = "tooltip-box";
     tooltip.textContent = tooltipText;
     document.body.appendChild(tooltip);
 
@@ -423,34 +611,35 @@ document.getElementById('add-criterio').addEventListener('click', function () {
 
     function toggleTooltip(e) {
       e.stopPropagation();
-      const isVisible = tooltip.classList.contains('visible');
+      const isVisible = tooltip.classList.contains("visible");
 
       // fecha outros abertos
-      document.querySelectorAll('.tooltip-box.visible')
-        .forEach(t => t.classList.remove('visible'));
+      document
+        .querySelectorAll(".tooltip-box.visible")
+        .forEach((t) => t.classList.remove("visible"));
 
       if (!isVisible) {
         positionTooltip();
-        tooltip.classList.add('visible');
+        tooltip.classList.add("visible");
       }
     }
 
     // agora basta 1 evento: click (funciona no desktop e mobile)
-    infoIcon.addEventListener('click', toggleTooltip);
+    infoIcon.addEventListener("click", toggleTooltip);
 
     // fecha clicando fora
-    document.addEventListener('click', (e) => {
+    document.addEventListener("click", (e) => {
       if (!infoIcon.contains(e.target) && !tooltip.contains(e.target)) {
-        tooltip.classList.remove('visible');
+        tooltip.classList.remove("visible");
       }
     });
 
     // reposiciona em resize ou scroll
-    window.addEventListener('resize', () => {
-      if (tooltip.classList.contains('visible')) positionTooltip();
+    window.addEventListener("resize", () => {
+      if (tooltip.classList.contains("visible")) positionTooltip();
     });
-    window.addEventListener('scroll', () => {
-      if (tooltip.classList.contains('visible')) positionTooltip();
+    window.addEventListener("scroll", () => {
+      if (tooltip.classList.contains("visible")) positionTooltip();
     });
   });
 
@@ -458,115 +647,116 @@ document.getElementById('add-criterio').addEventListener('click', function () {
    Ajustes de Acessibilidade
    =================================================== */
 
-// ---------- Modal acessível ----------
-const modalContent = modal?.querySelector(".modal-content");
-const openGenerateBtn = document.querySelector(".generate");
-let lastFocusedElement = null;
+  // ---------- Modal acessível ----------
+  const modalContent = modal?.querySelector(".modal-content");
+  const openGenerateBtn = document.querySelector(".generate");
+  let lastFocusedElement = null;
 
-function openModal() {
-  lastFocusedElement = document.activeElement;
-  modal.style.display = "block";
-  modal.setAttribute("aria-hidden", "false");
+  function openModal() {
+    lastFocusedElement = document.activeElement;
+    modal.style.display = "block";
+    modal.setAttribute("aria-hidden", "false");
 
-  // foco no título do modal
-  const modalTitle = modal.querySelector("h2");
-  modalTitle?.focus();
+    // foco no título do modal
+    const modalTitle = modal.querySelector("h2");
+    modalTitle?.focus();
 
-  // prender foco dentro do modal
-  trapFocus(modal);
-}
-
-function closeModal() {
-  modal.style.display = "none";
-  modal.setAttribute("aria-hidden", "true");
-  if (lastFocusedElement) {
-    lastFocusedElement.focus();
+    // prender foco dentro do modal
+    trapFocus(modal);
   }
-}
 
-function trapFocus(element) {
-  const focusableEls = element.querySelectorAll(
-    'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'
-  );
-  const firstEl = focusableEls[0];
-  const lastEl = focusableEls[focusableEls.length - 1];
+  function closeModal() {
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+    if (lastFocusedElement) {
+      lastFocusedElement.focus();
+    }
+  }
 
-  element.addEventListener("keydown", function(e) {
-    if (e.key === "Tab") {
-      if (e.shiftKey) {
-        if (document.activeElement === firstEl) {
-          e.preventDefault();
-          lastEl.focus();
-        }
-      } else {
-        if (document.activeElement === lastEl) {
-          e.preventDefault();
-          firstEl.focus();
+  function trapFocus(element) {
+    const focusableEls = element.querySelectorAll(
+      'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstEl = focusableEls[0];
+    const lastEl = focusableEls[focusableEls.length - 1];
+
+    element.addEventListener("keydown", function (e) {
+      if (e.key === "Tab") {
+        if (e.shiftKey) {
+          if (document.activeElement === firstEl) {
+            e.preventDefault();
+            lastEl.focus();
+          }
+        } else {
+          if (document.activeElement === lastEl) {
+            e.preventDefault();
+            firstEl.focus();
+          }
         }
       }
+    });
+  }
+
+  // evento global para fechar modal com ESC
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && modal.style.display === "block") {
+      closeModal();
     }
   });
-}
 
-// evento global para fechar modal com ESC
-document.addEventListener("keydown", function(e) {
-  if (e.key === "Escape" && modal.style.display === "block") {
+  // eventos do modal
+  openGenerateBtn?.addEventListener("click", openModal);
+  cancelBtn?.addEventListener("click", closeModal);
+  confirmBtn?.addEventListener("click", () => {
     closeModal();
+    // aqui a geração original do prompt continua funcionando normalmente
+  });
+
+  // ---------- Feedback de cópia ----------
+  const copyBtn = document.getElementById("copy-prompt");
+  const copyFeedback = document.getElementById("copy-feedback");
+  const protocolPreview = document.getElementById("protocol-preview");
+
+  // inicializa o botão como desabilitado
+  if (copyBtn) copyBtn.disabled = true;
+
+  // observar mudanças no conteúdo do preview
+  const observer = new MutationObserver(() => {
+    const content = protocolPreview.innerText.trim();
+    copyBtn.disabled = content.length === 0;
+  });
+
+  if (protocolPreview) {
+    observer.observe(protocolPreview, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
   }
-});
 
-// eventos do modal
-openGenerateBtn?.addEventListener("click", openModal);
-cancelBtn?.addEventListener("click", closeModal);
-confirmBtn?.addEventListener("click", () => {
-  closeModal();
-  // aqui a geração original do prompt continua funcionando normalmente
-});
+  copyBtn?.addEventListener("click", () => {
+    const text = protocolPreview.innerText.trim();
+    if (!text) return;
 
-// ---------- Feedback de cópia ----------
-const copyBtn = document.getElementById("copy-prompt");
-const copyFeedback = document.getElementById("copy-feedback");
-const protocolPreview = document.getElementById("protocol-preview");
+    navigator.clipboard.writeText(text).then(() => {
+      copyFeedback.classList.add("active");
+      copyFeedback.textContent = "Prompt copiado com sucesso!";
+      setTimeout(() => {
+        copyFeedback.classList.remove("active");
+        copyFeedback.textContent = "";
+      }, 2000);
+    });
+  });
 
-// inicializa o botão como desabilitado
-if (copyBtn) copyBtn.disabled = true;
-
-// observar mudanças no conteúdo do preview
-const observer = new MutationObserver(() => {
-  const content = protocolPreview.innerText.trim();
-  copyBtn.disabled = content.length === 0;
-});
-
-if (protocolPreview) {
-  observer.observe(protocolPreview, { childList: true, subtree: true, characterData: true });
-}
-
-copyBtn?.addEventListener("click", () => {
-  const text = protocolPreview.innerText.trim();
-  if (!text) return;
-
-  navigator.clipboard.writeText(text).then(() => {
-    copyFeedback.classList.add("active");
-    copyFeedback.textContent = "Prompt copiado com sucesso!";
-    setTimeout(() => {
-      copyFeedback.classList.remove("active");
-      copyFeedback.textContent = "";
-    }, 2000);
+  // ---------- Botões de info acessíveis ----------
+  document.querySelectorAll("button.info").forEach((btn) => {
+    btn.setAttribute("aria-expanded", "false");
+    btn.addEventListener("click", () => {
+      const expanded = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", String(!expanded));
+    });
   });
 });
-
-
-    // ---------- Botões de info acessíveis ----------
-    document.querySelectorAll("button.info").forEach(btn => {
-      btn.setAttribute("aria-expanded", "false");
-      btn.addEventListener("click", () => {
-        const expanded = btn.getAttribute("aria-expanded") === "true";
-        btn.setAttribute("aria-expanded", String(!expanded));
-      });
-    });
-
-});
-
 
 /*  
 Este projeto é licenciado sob:
