@@ -144,6 +144,30 @@ header h1 {
   font-weight: 600;
 }
 
+/* Ícone para reabrir modal de introdução */
+.reopen-intro {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: transform var(--transition-fast);
+}
+
+.reopen-intro svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.reopen-intro:hover {
+  transform: scale(1.1);
+}
+
+.reopen-intro:focus {
+  outline: var(--outline-focus);
+  outline-offset: var(--outline-offset);
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;
@@ -551,6 +575,7 @@ a:focus {
   display: inline;
 }
 
+/* substitua apenas essas linhas do bloco .tooltip-box */
 .tooltip-box {
   position: absolute;
   background: var(--color-text);
@@ -558,11 +583,12 @@ a:focus {
   padding: 0.5rem 0.75rem;
   border-radius: var(--border-radius-xs);
   font-size: 0.85rem;
-  max-width: 18rem;
-  z-index: 999;
+  max-width: min(18rem, calc(100vw - 16px)); /* cabe no viewport */
+  z-index: 9999;
   box-shadow: var(--shadow-sm);
   display: none;
   transition: opacity var(--transition-base);
+  overflow-wrap: anywhere; /* quebra palavras longas */
 }
 
 .tooltip-box.visible {

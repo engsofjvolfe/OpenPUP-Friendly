@@ -21,6 +21,19 @@ Todas as mudanças significativas neste projeto serão documentadas neste arquiv
 - Alteração do fluxo da etapa 9 deixando-a como última a ser gerada (após o prompt principal)
 - Adicão de botão para mostrar/esconder pré-visualização de prompt
 
+## [1.4.1] – 2025-09-01
+
+### Adicionado
+
+- Ícone no header para reabrir caixa de boas vindas (instruções)
+- Estilos para o ícone adicionado
+- Função para reabrir a caixa de boas vindas(instruções) - `reopenIntroBtn`
+
+### Modificado
+
+- Ajustado tooltip customizado para position: fixed com max-width: calc(100vw - 2rem), garantindo exibição correta e responsiva em dispositivos móveis. JS modificado no bloco `// Tooltips customizados para ícones de informação`
+- Ajuste no tamanho do ícone de infomração do modal de boas vindas para melhorar o design
+
 ## [1.4.0] – 2025-09-01
 
 ### Adicionado

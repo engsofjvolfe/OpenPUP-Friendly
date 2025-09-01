@@ -316,6 +316,16 @@ document.addEventListener("DOMContentLoaded", function () {
         closeIntroModal();
       }
     });
+
+    // Botão para reabrir o modal de introdução
+    const reopenIntroBtn = document.getElementById("reopen-intro");
+    if (reopenIntroBtn) {
+      reopenIntroBtn.addEventListener("click", () => {
+        // Remove flag do localStorage para que o modal não fique bloqueado
+        localStorage.removeItem("introClosed");
+        openIntroModal();
+      });
+    }
   }
 
   // Gerar Protocolo
@@ -597,13 +607,30 @@ IA — faça:
 
     function positionTooltip() {
       const rect = infoIcon.getBoundingClientRect();
-      const top = rect.bottom + window.scrollY + 8;
-      let left = rect.left + window.scrollX;
+      const spacing = 8;
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      const scrollX = window.scrollX || document.documentElement.scrollLeft;
 
-      // Evitar que estoure a tela
-      if (left + tooltip.offsetWidth > window.innerWidth - 16) {
-        left = window.innerWidth - tooltip.offsetWidth - 16;
+      // Centraliza abaixo do ícone
+      let top = rect.bottom + scrollY + spacing;
+      let left = rect.left + scrollX + rect.width / 2 - tooltip.offsetWidth / 2;
+
+      // Limites horizontais (mantém 8px das bordas)
+      const minLeft = scrollX + spacing;
+      const maxLeft =
+        scrollX + window.innerWidth - tooltip.offsetWidth - spacing;
+      left = Math.max(minLeft, Math.min(left, maxLeft));
+
+      // Se estourar embaixo, posiciona acima
+      const bottom = top + tooltip.offsetHeight;
+      const viewportBottom = scrollY + window.innerHeight - spacing;
+      if (bottom > viewportBottom) {
+        top = rect.top + scrollY - tooltip.offsetHeight - spacing;
       }
+
+      // Nunca acima do topo visível
+      const minTop = scrollY + spacing;
+      if (top < minTop) top = minTop;
 
       tooltip.style.top = `${top}px`;
       tooltip.style.left = `${left}px`;
@@ -613,14 +640,25 @@ IA — faça:
       e.stopPropagation();
       const isVisible = tooltip.classList.contains("visible");
 
-      // fecha outros abertos
+      // Fecha outros abertos
       document
         .querySelectorAll(".tooltip-box.visible")
         .forEach((t) => t.classList.remove("visible"));
 
       if (!isVisible) {
-        positionTooltip();
+        // 1) Mostra invisível para medir corretamente
         tooltip.classList.add("visible");
+        tooltip.style.visibility = "hidden";
+
+        // Força reflow para garantir medidas (opcional, mas ajuda)
+        // eslint-disable-next-line no-unused-expressions
+        tooltip.offsetWidth;
+
+        // 2) Agora posiciona com width/height reais
+        positionTooltip();
+
+        // 3) Exibe
+        tooltip.style.visibility = "";
       }
     }
 
@@ -632,6 +670,13 @@ IA — faça:
       if (!infoIcon.contains(e.target) && !tooltip.contains(e.target)) {
         tooltip.classList.remove("visible");
       }
+    });
+
+    // Adiciona evento de scroll para fechar todos os tooltips
+    window.addEventListener("scroll", () => {
+      document.querySelectorAll(".tooltip-box.visible").forEach((t) => {
+        t.classList.remove("visible");
+      });
     });
 
     // reposiciona em resize ou scroll
