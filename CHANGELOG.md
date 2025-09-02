@@ -21,6 +21,18 @@ Todas as mudanças significativas neste projeto serão documentadas neste arquiv
 - Alteração do fluxo da etapa 9 deixando-a como última a ser gerada (após o prompt principal)
 - Adicão de botão para mostrar/esconder pré-visualização de prompt
 
+## [1.4.2] – 2025-09-02
+
+### Modificado
+
+- **Estrutura do `script.js`**: Reorganizado em seções lógicas e bem comentadas (ex: Funções Auxiliares, Modal de Introdução).
+- **Funções utilitárias**: Agrupadas e documentadas (`formatField`, `validateCode`, `trapFocus`)
+- **Lógica de modais**: Padronizada para abertura, fechamento e acessibilidade
+- **Tooltips**: Melhorias no posicionamento e visibilidade
+- **Estilos**: Ajustes nas classes e IDs relativos ao botão que realiza cópia dos prompt `#copy-prompt` e `#copy-feedback` para alinhamento com `script.js`. Melhorias na proporção do ícone de informação com adição do elemento e classe `button.info` para visual mais limpo
+
+_Todas as alterações são internas e não afetam o comportamento visível ou funcionalidades existentes_
+
 ## [1.4.1] – 2025-09-01
 
 ### Adicionado
@@ -32,7 +44,7 @@ Todas as mudanças significativas neste projeto serão documentadas neste arquiv
 ### Modificado
 
 - Ajustado tooltip customizado para position: fixed com max-width: calc(100vw - 2rem), garantindo exibição correta e responsiva em dispositivos móveis. JS modificado no bloco `// Tooltips customizados para ícones de informação`
-- Ajuste no tamanho do ícone de infomração do modal de boas vindas para melhorar o design
+- Ajuste no tamanho do ícone de informação do modal de boas vindas para melhorar o design
 
 ## [1.4.0] – 2025-09-01
 

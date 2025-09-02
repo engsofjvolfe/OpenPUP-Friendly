@@ -117,12 +117,16 @@ body {
   display: block;
   margin-top: 0.3rem;
   font-size: 0.85em;
-  color: #007b00;
+  color: var(--color-success);
+  border-color: var(--color-info);
+  padding: 0.3rem;
   visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
 }
-
 #copy-feedback.active {
   visibility: visible;
+  opacity: 1;
 }
 
 /* ===================================================
@@ -189,6 +193,20 @@ header h1 {
   font-size: 0.95rem;
 }
 
+#copy-prompt,
+#copy-prompt:disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  text-align: center;
+}
+
+#copy-prompt:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .actions button:hover {
   background: var(--color-primary-hover);
 }
@@ -210,12 +228,6 @@ header h1 {
 .img-and-btn img.img-left {
   max-height: 2rem;
   border-radius: var(--border-radius-xs);
-}
-
-#copy-feedback {
-  display: none;
-  border-color: var(--color-info);
-  padding: 0.3rem;
 }
 
 .rem-crit {
@@ -507,7 +519,7 @@ a:focus {
 }
 
 .criterio-controls button {
-  background: #6200ee;
+  background: var(--color-primary);
   color: var(--color-text-light);
   border: none;
   cursor: pointer;
@@ -515,7 +527,7 @@ a:focus {
 }
 
 .criterio-controls button:hover {
-  background: #4500b5;
+  background: var(--color-primary-hover);
 }
 
 .examples {
@@ -541,6 +553,11 @@ a:focus {
   font-family: var(--font-mono);
   font-size: 0.85rem;
   min-height: 40vh;
+}
+
+button.info {
+  border: none;
+  background: none;
 }
 
 .info-box {
@@ -620,8 +637,8 @@ a:focus {
 }
 
 .icon-info {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1rem;
+  height: 1rem;
   cursor: pointer;
   flex-shrink: 0;
   vertical-align: middle;
@@ -701,11 +718,6 @@ a:focus {
 
 #idioma-suggestions:empty {
   display: none;
-}
-
-#copy-prompt:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* ===================================================
