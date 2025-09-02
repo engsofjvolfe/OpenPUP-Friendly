@@ -21,6 +21,22 @@ Todas as mudanças significativas neste projeto serão documentadas neste arquiv
 - Alteração do fluxo da etapa 9 deixando-a como última a ser gerada (após o prompt principal)
 - Adicão de botão para mostrar/esconder pré-visualização de prompt
 
+## [1.4.3] – 2025-09-02
+
+### Adicionado
+
+- **Header fixo e responsivo**: agora permanece visível no topo em todas as telas
+- **Comportamento "shrink"**: cabeçalho reduz suavemente o tamanho ao rolar a página, liberando espaço de leitura
+
+### Modificado
+
+- **Estilo do título (`header h1`)**: ajustado para se adaptar ao estado compacto, preservando clareza e legibilidade
+- **Transições do header**: aplicadas para `padding` e `font-size`, resultando em UX mais fluida
+
+_Todas as alterações seguem a abordagem mobile first já utilizada no projeto, sem afetar negativamente layouts existentes_
+
+### Modificado
+
 ## [1.4.2] – 2025-09-02
 
 ### Modificado
