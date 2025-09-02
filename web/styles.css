@@ -133,19 +133,33 @@ body {
    HEADER (inalterado)
    =================================================== */
 header {
+  position: sticky; /* mantém visível ao rolar */
+  top: 0;
+  z-index: 100;
   background: var(--color-footer);
   color: var(--color-footer-text);
-  padding: 0.875rem 1.125rem;
+  padding: 0.75rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  transition: padding 0.25s ease, font-size 0.25s ease;
 }
 
 header h1 {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
+  transition: font-size 0.25s ease;
+}
+
+/* Estado compacto do header ao rolar tela */
+header.shrink {
+  padding: 0.4rem 0.75rem;
+}
+
+header.shrink h1 {
+  font-size: 0.95rem;
 }
 
 /* Ícone para reabrir modal de introdução */

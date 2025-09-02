@@ -514,6 +514,18 @@ IA — faça:
     }
   }
 
+  // --- Header shrink ao rolar ---
+  const header = document.querySelector("header");
+  let lastScrollY = 0;
+
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 20 && !header.classList.contains("shrink")) {
+      header.classList.add("shrink");
+    } else if (window.scrollY <= 20 && header.classList.contains("shrink")) {
+      header.classList.remove("shrink");
+    }
+  });
+
   // =============================================
   // SEÇÃO 5: Modal de Confirmação
   // =============================================
