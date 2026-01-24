@@ -1,0 +1,232 @@
+# Registro Narrativo de Incidente com Sistema Generativo
+
+## Caso: Levantamento Bibliográfico + Validação Técnica de Fontes
+
+**Sistema:** Le Chat (Mistral AI)  
+**Data aproximada:** março de 2025  
+**Protocolo em uso:** OPENPUP (variação próxima ao v2)  
+**Contexto do projeto:** SIVA — sistema educacional multimodal
+
+---
+
+## 1. Contexto Geral
+
+Eu estava utilizando o sistema Le Chat, da Mistral AI, para realizar um levantamento bibliográfico acadêmico destinado a um Trabalho de Conclusão de Curso (TCC).
+
+O tema envolvia áreas como:
+
+- neurociência da aprendizagem
+- pedagogia médica
+- tecnologia educacional
+- sistemas multimodais aplicados à educação
+
+O uso do sistema não era exploratório nem casual.  
+Tratava-se de um uso **crítico**, orientado por um protocolo estruturado (OPENPUP), com foco em:
+
+- confiabilidade acadêmica
+- rastreabilidade das fontes
+- respeito a restrições explícitas
+- validação consciente do output
+
+O estado mental era de atenção e expectativa crítica, não de delegação cega.
+
+---
+
+## 1.1 Estado do Sistema no Momento do Incidente
+
+- **Plataforma:** Le Chat (Mistral AI)
+- **Modelo/versão:** não explicitamente informado pelo sistema
+- **Conhecimento declarado:** até aproximadamente novembro de 2024
+- **Modo de uso:** detalhado
+- **Indicação de versão experimental:** nenhuma
+- **Experiência prévia com o sistema:** sim, em interações anteriores com prompts estruturados
+- **Expectativa implícita:** aderência rigorosa ao protocolo OPENPUP, com interrupção do fluxo em caso de falha crítica
+
+---
+
+## 2. Intenção Inicial (Antes da IA Responder)
+
+Minha intenção era obter:
+
+- um levantamento bibliográfico acadêmico abrangente
+- fontes provenientes de bases confiáveis
+- organização clara em texto + tabela com links
+- respeito aos critérios MUST / SHOULD / AVOID
+
+Eu considerei **inegociável**:
+
+- a confiabilidade acadêmica das fontes
+- a ausência de links problemáticos ou não verificáveis
+- o respeito às regras de parada
+
+Considerei **flexível**:
+
+- profundidade exata
+- estilo de redação
+- ajustes posteriores
+
+O que eu **não considerei plenamente**:
+
+- a necessidade de validação técnica explícita dos links (ex.: certificados SSL, acessibilidade real no momento da entrega)
+
+---
+
+## 3. O Pedido / Protocolo Usado
+
+Foi utilizado um prompt estruturado baseado no OPENPUP, contendo:
+
+- definição clara de tarefa
+- prioridades explícitas
+- restrições de fonte
+- expectativa de interrupção em caso de falha
+- formato de saída esperado
+
+O protocolo não era uma sugestão de comportamento, mas um **script de execução**.
+
+---
+
+## 3.1 Prompt Completo Utilizado
+
+O prompt completo foi fornecido ao sistema, contendo seções como META, TAREFA, PRIORIDADES, RESTRIÇÕES e regras de parada.
+
+(O conteúdo integral do prompt é mantido em registro separado para rastreabilidade.)
+
+---
+
+## 4. O Que o Sistema Entregou (Primeira Impressão)
+
+A resposta inicial parecia:
+
+- organizada
+- extensa
+- bem estruturada
+- academicamente coerente
+- alinhada ao formato solicitado
+
+Num primeiro momento:
+
+- gerou confiança
+- não apresentou inconsistências evidentes
+- parecia cumprir os critérios definidos
+
+Não houve incômodo imediato.
+
+---
+
+## 5. O Incômodo / Ruptura
+
+O incômodo surgiu **após análise posterior**, quando identifiquei:
+
+- um link presente na resposta final que retornava erro de certificado
+- mensagem de navegador do tipo `ERR_CERT_AUTHORITY_INVALID`
+
+O problema não era o tema do link, mas:
+
+- a **insegurança técnica**
+- a **inacessibilidade prática**
+- a ausência de qualquer sinalização ou bloqueio por parte do sistema
+
+Isso rompeu a confiança no processo de validação implícito.
+
+---
+
+## 6. Exploração do Problema (Em Tempo Real)
+
+Passei a questionar:
+
+- como os links haviam sido validados
+- se houve alguma checagem técnica mínima
+- se as regras de parada deveriam ter sido acionadas
+
+O sistema explicou:
+
+- o processo de busca conceitual
+- a seleção por domínio acadêmico
+- e reconheceu a falha na validação técnica do link específico
+
+Ficou claro que:
+
+- a validação foi **semântica**, não técnica
+- o sistema assumiu que domínios acadêmicos implicavam segurança
+
+---
+
+## 7. O Que Só Ficou Claro Depois
+
+Com reflexão posterior, ficou evidente que:
+
+- o sistema não distingue relevância acadêmica de segurança técnica
+- a automação operou sob uma suposição implícita não declarada
+- não houve gatilho de parada, apesar do impacto potencial
+
+O limite não era cognitivo, mas **operacional**:
+
+- a IA não tratou a inacessibilidade técnica como erro crítico
+
+---
+
+## 8. O Que Eu Ainda Não Entendo
+
+Ainda permanecem dúvidas como:
+
+- até que ponto é viável validar tecnicamente todos os links
+- se esse tipo de validação deve ser sempre humana
+- como incorporar checagens técnicas sem inviabilizar o fluxo
+- se diferentes sistemas tratariam esse erro como bloqueante
+
+Também permanece a tensão entre:
+
+- eficiência
+- controle
+- confiança
+
+---
+
+## 9. Relação com Outros Casos (Percepção Inicial)
+
+Este caso sugere semelhança com outros incidentes onde:
+
+- o sistema entrega algo “aparentemente correto”
+- a falha só emerge em análise posterior
+- a IA não interrompe o fluxo por conta própria
+
+A diferença principal é que aqui:
+
+- o erro não foi lógico nem conceitual
+- foi **técnico e infraestrutural**
+
+---
+
+## 10. Efeitos Práticos Imediatos
+
+Após o incidente:
+
+- passei a não confiar automaticamente em links fornecidos
+- considerei incluir validação técnica explícita no protocolo
+- reavaliei o que constitui um “erro crítico”
+- reforcei a importância de auditoria humana
+
+Este registro existe por causa disso.
+
+---
+
+## 11. Observações Livres
+
+Este incidente reforçou a percepção de que:
+
+- automação não substitui vigilância
+- protocolos nunca abarcam tudo
+- cada domínio expõe novos limites
+
+A falha não invalida o sistema,  
+mas define claramente **onde ele não pode operar sozinho**.
+
+---
+
+## Nota Final
+
+Este registro não busca corrigir o passado.  
+Ele preserva o contexto em que a confiança foi tensionada.
+
+Se no futuro eu reler isto e perceber novos detalhes,  
+então o registro cumpriu seu papel.

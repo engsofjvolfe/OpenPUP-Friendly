@@ -5,7 +5,7 @@ Autor: Jeanco Volfe
 Repositório: https://github.com/engsofjvolfe/OpenPUP.git 
 -->
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
@@ -18,53 +18,70 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
   </head>
   <body>
     <header role="banner">
-      <h1 id="page-title">OpenPUP — Protocolo Universal de Prompt</h1>
-      <div class="actions">
-        <!-- Ícone para reabrir o modal -->
-        <span
-          id="reopen-intro"
-          class="reopen-intro"
-          role="button"
-          tabindex="0"
-          aria-label="Reabrir introdução"
-          title="Introdução"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 28 28"
-            aria-hidden="true"
-            focusable="false"
-            class="icon-info"
-          >
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              fill="none"
-              stroke="var(--color-border)"
-              stroke-width="2"
-            />
-            <line
-              x1="12"
-              y1="8"
-              x2="12"
-              y2="8"
-              stroke="var(--color-border)"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-            <line
-              x1="12"
-              y1="12"
-              x2="12"
-              y2="16"
-              stroke="var(--color-border)"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-          </svg>
-        </span>
+      <div class="header-wrapper">
+        <div class="header-content">
+          <h1 id="page-title">OpenPUP — Protocolo Universal de Prompt</h1>
+
+          <div class="header-right">
+            <div class="actions">
+              <!-- Ícone para reabrir o modal -->
+              <span
+                id="reopen-intro"
+                class="reopen-intro"
+                role="button"
+                tabindex="0"
+                aria-label="Reabrir introdução"
+                title="Introdução"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                  class="icon-info"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    fill="none"
+                    stroke="var(--color-border)"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="12"
+                    y1="8"
+                    x2="12"
+                    y2="8"
+                    stroke="var(--color-border)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="12"
+                    y1="12"
+                    x2="12"
+                    y2="16"
+                    stroke="var(--color-border)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de progresso DENTRO do header -->
+        <div class="header-progress-wrapper" id="header-progress-wrapper" role="status" aria-live="polite">
+          <span class="header-progress-label">Preenchimento:</span>
+          <div class="header-progress-container">
+            <div class="header-progress-fill" id="header-progress-fill"></div>
+          </div>
+          <span class="header-progress-percent" id="header-progress-percent">0%</span>
+        </div>
       </div>
+    </header>
 
       <!-- Modal de introdução -->
       <div
@@ -77,22 +94,26 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
       >
         <div class="modal-content" role="document">
           <div class="intro-text">
-            <p><strong>Bem-vindo ao OpenPUP!</strong></p>
+            <p><strong> Bem-vindo ao OpenPUP v2!</strong></p>
             <p>
-              Esta ferramenta ajuda você a criar mensagens (prompts) bem
-              estruturadas para usar com inteligência artificial.
+              Crie prompts estruturados que
+              <em>podem auxiliar na obtenção de melhores respostas</em> de IAs
+              como ChatGPT, Claude, Gemini e outros.
             </p>
-            <p>
-              Basta preencher os campos da página, etapa por etapa, e o OpenPUP
-              monta um prompt que você poderá copiar e colar em seu agente de IA
-              preferido.
+
+            <p><strong>Como funciona:</strong></p>
+            <p class="intro-list">
+              <strong>1.</strong> Preencha os campos do formulário<br />
+              <strong>2.</strong> Clique em "Gerar Prompt"<br />
+              <strong>3.</strong> Copie e cole no seu agente de IA
             </p>
-            <p>
-              Se tiver dúvidas, clique nos ícones de ajuda ao lado dos títulos —
-              eles explicam cada parte da interface.
+
+            <p><strong>Dicas rápidas:</strong></p>
+            <p class="intro-list">
+              • Clique nos ícones
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                class="icon-info"
+                class="icon-info icon-inline"
                 viewBox="0 0 35 35"
                 aria-hidden="true"
                 focusable="false"
@@ -117,10 +138,16 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
                   stroke-linecap="round"
                 />
               </svg>
+              para ajuda em cada campo<br />
+              • Seus últimos 5 prompts ficam salvos automaticamente<br />
+              • Use a barra de completude para verificar se preencheu todos os
+              campos
             </p>
+
             <p class="intro-minor-text">
-              OpenPUP não é infalível. Estruture, Experimente, Quebre,
-              Reconstrua.
+              🔬 Filosofia OpenPUP:
+              <em>Estruture, Experimente, Quebre, Reconstrua.</em><br />
+              Perfeição, NÃO; transparência, SIM!
             </p>
           </div>
 
@@ -155,6 +182,26 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
             class="img-left"
           />
           <button id="reset-top" class="reset" type="button">Resetar</button>
+        </div>
+
+        <!-- Indicador de Completude -->
+        <div
+          class="completeness-indicator"
+          id="completeness-indicator-original"
+          role="status"
+          aria-live="polite"
+        >
+          <div class="completeness-header">
+            <span class="completeness-percentage" id="completeness-percentage"
+              >0%</span
+            >
+          </div>
+          <div class="completeness-bar-container">
+            <div class="completeness-bar" id="completeness-bar"></div>
+          </div>
+          <small class="completeness-hint" id="completeness-hint"
+            >Preencha os campos essenciais para gerar o protocolo</small
+          >
         </div>
 
         <!-- Etapa 0 -->
@@ -236,7 +283,6 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
               autocomplete="off"
               aria-autocomplete="list"
               aria-controls="idioma-suggestions"
-              aria-expanded="false"
               aria-describedby="idioma-help"
             />
             <div id="idioma-help" class="sr-only">
@@ -248,7 +294,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
               role="listbox"
               aria-label="Sugestões de idioma"
             ></div>
-            <input type="hidden" name="idioma" value="pt" />
+            <input type="hidden" id="idioma" name="idioma" value="pt" />
           </div>
 
           <div class="input-group">
@@ -289,7 +335,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
               class="info"
               type="button"
               aria-label="Ajuda: Tarefa"
-              title="Defina objetivo, formato em que a IA deve entregar a resposta (Texto corrido, História, Tabela, Lista, Markdown, JSON etc) e tamanho da resposta que a IA deve gerar (prefira respostas com até 300 palavras)."
+              title="Defina objetivo, formato em que a IA deve entregar a resposta (Texto corrido, História, Tabela, Lista, etc) e tamanho da resposta que a IA deve gerar (prefira respostas com até 300 palavras)."
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -322,11 +368,31 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
           </h2>
 
           <div class="input-group">
-            <label for="objetivo">O que a IA deve fazer</label>
+            <label for="objetivo_o_que">O que a IA deve fazer</label>
             <textarea
-              id="objetivo"
-              name="objetivo"
-              placeholder="Ex.: gerar resumo sobre sustentabilidade"
+              id="objetivo_o_que"
+              name="objetivo_o_que"
+              placeholder="O que você quer que a IA produza? (ex: resumo, análise, código, lista...)"
+            ></textarea>
+          </div>
+
+          <div class="input-group">
+            <label for="objetivo_por_que">Por que você precisa disso</label>
+            <textarea
+              id="objetivo_por_que"
+              name="objetivo_por_que"
+              placeholder="Para que contexto ou objetivo maior? (ex: apresentação, estudo, decisão...)"
+            ></textarea>
+          </div>
+
+          <div class="input-group">
+            <label for="objetivo_criterio"
+              >Como você saberá que ficou bom</label
+            >
+            <textarea
+              id="objetivo_criterio"
+              name="objetivo_criterio"
+              placeholder="Qual critério de sucesso? (ex: linguagem acessível, dados objetivos, exemplos práticos...)"
             ></textarea>
           </div>
 
@@ -550,6 +616,57 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
           </div>
         </section>
 
+        <!-- Etapa 3.5 - Contexto Implícito -->
+        <section class="step" id="step3_5" aria-labelledby="step3_5-title">
+          <h2 id="step3_5-title">
+            Contexto Implícito <span class="badge-human">Humano</span>
+            <button
+              class="info"
+              type="button"
+              aria-label="Ajuda: Contexto Implícito"
+              title="Informações que você sabe mas a IA não: sua área de atuação, nível de conhecimento, preferências de estilo, restrições do seu contexto, etc."
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="icon-info"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <circle cx="12" cy="12" r="10" fill="#000" />
+                <line
+                  x1="12"
+                  y1="8"
+                  x2="12.01"
+                  y2="8"
+                  stroke="#fff"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <line
+                  x1="12"
+                  y1="12"
+                  x2="12"
+                  y2="16"
+                  stroke="#fff"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </h2>
+          <div class="input-group">
+            <label for="contexto_implicito"
+              >O que a IA não sabe sobre você ou sua situação</label
+            >
+            <textarea
+              id="contexto_implicito"
+              name="contexto_implicito"
+              placeholder="Ex: Sou professor de ensino médio, meu público tem dificuldade com termos técnicos, preciso apresentar em 20min, estou usando apenas dados públicos..."
+            ></textarea>
+          </div>
+        </section>
+
         <!-- Etapa 4 -->
         <section class="step" id="step4" aria-labelledby="step4-title">
           <h2 id="step4-title">
@@ -703,8 +820,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
       <!-- Modal de confirmação -->
       <div
         id="confirmation-modal"
-        class="modal"
-        style="display: none"
+        class="modal hidden"
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-title"
@@ -717,6 +833,37 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
               Confirmar e Gerar
             </button>
             <button id="cancel-modal" type="button">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Validação (Material Design) -->
+      <div
+        id="validation-modal"
+        class="modal validation-modal hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="validation-title"
+      >
+        <div class="modal-content validation-content">
+          <div class="validation-header">
+            <h2 id="validation-title"></h2>
+          </div>
+          <div class="validation-body">
+            <div id="validation-errors" class="validation-section"></div>
+            <div id="validation-warnings" class="validation-section"></div>
+          </div>
+          <div class="validation-footer">
+            <button id="validation-cancel" type="button" class="btn-secondary">
+              Revisar
+            </button>
+            <button
+              id="validation-continue"
+              type="button"
+              class="btn-primary hidden"
+            >
+              Continuar
+            </button>
           </div>
         </div>
       </div>
@@ -754,6 +901,66 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
         </div>
       </div>
     </div>
+
+    <!-- Botão flutuante para abrir histórico -->
+    <button
+      id="history-fab"
+      type="button"
+      class="history-fab"
+      aria-label="Abrir histórico de prompts"
+      title="Ver histórico de prompts salvos"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+      </svg>
+      <span class="history-count" id="history-count">0</span>
+    </button>
+
+    <!-- Painel lateral de histórico -->
+    <div id="history-sidebar" class="history-sidebar" aria-hidden="true">
+      <div class="history-sidebar-header">
+        <h3>Histórico de Prompts</h3>
+        <button
+          id="close-history-sidebar"
+          type="button"
+          class="close-sidebar-btn"
+          aria-label="Fechar histórico"
+        >
+          ✕
+        </button>
+      </div>
+      <div class="history-sidebar-body">
+        <p class="history-help-text">
+          Seus últimos 5 prompts são salvos automaticamente. Clique para
+          recarregar.
+        </p>
+        <div id="history-list" class="history-list">
+          <p class="history-empty">Nenhum prompt gerado ainda.</p>
+        </div>
+      </div>
+      <div class="history-sidebar-footer">
+        <button
+          id="clear-history"
+          type="button"
+          class="clear-history-btn hidden"
+        >
+          Limpar Histórico
+        </button>
+      </div>
+    </div>
+
+    <!-- Overlay para fechar sidebar ao clicar fora -->
+    <div id="history-overlay" class="history-overlay" aria-hidden="true"></div>
 
     <footer role="contentinfo">
       <span
@@ -833,6 +1040,7 @@ Repositório: https://github.com/engsofjvolfe/OpenPUP.git
     </footer>
 
     <!-- JS -->
+    <script src="web/anime.min.js"></script>
     <script src="web/script.js" defer></script>
   </body>
 </html>
