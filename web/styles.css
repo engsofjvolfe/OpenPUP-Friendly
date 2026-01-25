@@ -147,6 +147,11 @@ header {
   transition: padding 0.3s ease;
 }
 
+header.no-transition,
+header.no-transition * {
+  transition: none !important;
+}
+
 .header-wrapper {
   position: relative;
   width: 100%;
@@ -441,6 +446,159 @@ header.shrink .header-progress-wrapper.visible {
 #copy-prompt:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ===================================================
+   TOGGLE SWITCH PREVIEW MODE
+   =================================================== */
+.preview-mode-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--color-info-bg);
+  border-radius: var(--border-radius-sm);
+  margin-bottom: 1rem;
+  border: 1px solid var(--color-border);
+}
+
+.preview-mode-toggle-wrapper.hidden {
+  display: none;
+}
+
+.toggle-label-text {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.preview-mode-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.preview-mode-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color var(--transition-fast);
+}
+
+.preview-mode-text i {
+  font-size: 0.85rem;
+}
+
+.preview-mode-text-right {
+  opacity: 0.6;
+}
+
+.preview-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.preview-toggle-slider {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+  background-color: var(--color-border);
+  border-radius: var(--border-radius-full);
+  transition: background-color var(--transition-base);
+}
+
+.preview-toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  top: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform var(--transition-base);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.preview-toggle-input:checked + .preview-toggle-slider {
+  background-color: var(--color-primary);
+}
+
+.preview-toggle-input:checked + .preview-toggle-slider::before {
+  transform: translateX(24px);
+}
+
+.preview-toggle-input:focus + .preview-toggle-slider {
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+}
+
+.preview-toggle-input:checked ~ .preview-mode-text-right {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
+.preview-toggle-input:not(:checked) ~ .preview-mode-text:first-of-type {
+  color: var(--color-primary);
+}
+
+.preview-toggle-input:checked ~ .preview-mode-text:first-of-type {
+  opacity: 0.6;
+}
+
+/* ===================================================
+   AJUSTES NO COPY-AND-FEEDBACK
+   =================================================== */
+.copy-and-feedback {
+  position: relative;
+  min-height: 3rem;
+}
+
+#copy-feedback {
+  position: absolute;
+  left: 0;
+  bottom: -1.5rem;
+  font-size: 0.85rem;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+
+#copy-feedback.active {
+  opacity: 1;
+}
+
+/* ===================================================
+   MODAL DE INFO DE CÓPIA
+   =================================================== */
+.copy-info-box {
+  border-left: 4px solid var(--color-primary);
+  padding: 1rem;
+  margin: 1rem 0;
+  background-color: var(--color-info-bg);
+  border-radius: var(--border-radius-sm);
+}
+
+.copy-info-box p {
+  margin-bottom: 0.75rem;
+}
+
+.copy-info-box p:last-child {
+  margin-bottom: 0;
+}
+
+.copy-info-hint {
+  opacity: 0.8;
+  font-size: 0.9rem;
 }
 
 .actions button:hover {
@@ -754,6 +912,8 @@ header.shrink .header-progress-wrapper.visible {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .history-item-title {
@@ -764,6 +924,7 @@ header.shrink .header-progress-wrapper.visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .history-item-date {

@@ -23,9 +23,11 @@
 - [ ] **Adição de botão para mostrar/esconder pré-visualização de prompt**
   - Permitir colapsar/expandir preview para economizar espaço de tela
 
-- [ ] **Pré-visualização em tempo real**
+- [x] **Pré-visualização em tempo real**
   - Atualizar preview automaticamente assim que o usuário preenche cada campo
-  - Eliminar necessidade de "gerar" para ver resultado
+  - Modo humanizado com ícones Font Awesome para melhor legibilidade
+  - Toggle para alternar entre visualização humanizada e técnica
+  - Rolagem automática ao alternar modos
 
 - [ ] **Menu de navegação colapsável**
   - Criar menu principal com seções: Home, Documentação Oficial, Exemplos de Uso, Guias
@@ -95,6 +97,12 @@
 - [ ] **Campo para exibir média de tokens, palavras, caracteres**
   - Estatísticas em tempo real do prompt gerado
   - Alertas de overflow baseados em limites conhecidos de IAs
+
+- [ ] **Campo de restrições avançadas com gatilhos mais duros**
+  - Investigar tipos de interação mais eficazes para controle de comportamento da IA
+  - Implementar campo ou seção dedicada a constraints absolutas
+  - Avaliar uso de triggers, fail-safes e validações estritas
+  - Pesquisar melhores práticas de prompt engineering para enforcement
 
 - [ ] **Adição de banner do projeto**
   - Visual identity

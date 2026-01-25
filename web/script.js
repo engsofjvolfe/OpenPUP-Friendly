@@ -16,17 +16,30 @@ const CONFIG = {
   MODAL_CLOSE_DELAY: 20,
   SCROLL_OFFSET: 20,
   VALID_CODES: new Set(["M", "S", "A", "D"]),
+  REALTIME_PREVIEW_DEBOUNCE: 500,
 };
 
 // =============================================
 // INICIALIZAÇÃO
 // =============================================
+// Desabilitar scroll restoration do navegador (evita scroll automático após F5)
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   // Estado Global
   const state = {
     languages: [],
     isHeaderProgressVisible: false,
+    previewMode: "human", // "human" ou "technical"
+    technicalProtocol: "", // Armazena o protocolo técnico gerado
+    isProgrammaticScroll: false, // Flag para desabilitar shrink durante scroll programático
+    isPageReady: false, // Flag para garantir que página está pronta antes de processar scroll
   };
+
+  // Cache de altura do header (evita reflows)
+  let cachedHeaderHeight = 60;
 
   // Cache de Elementos DOM
   const elements = {
@@ -39,6 +52,7 @@ document.addEventListener("DOMContentLoaded", function () {
       intro: document.getElementById("intro-modal"),
       confirm: document.getElementById("confirmation-modal"),
       validation: document.getElementById("validation-modal"),
+      copyInfo: document.getElementById("copy-info-modal"),
     },
     progress: {
       original: document.getElementById("completeness-indicator-original"),
@@ -56,6 +70,10 @@ document.addEventListener("DOMContentLoaded", function () {
     copy: {
       btn: document.getElementById("copy-prompt"),
       feedback: document.getElementById("copy-feedback"),
+    },
+    togglePreview: {
+      input: document.getElementById("toggle-preview-mode"),
+      container: document.getElementById("toggle-container"),
     },
     history: {
       fab: document.getElementById("history-fab"),
@@ -135,6 +153,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     updateTextContent: (element, text) => {
       if (element) element.textContent = text;
+    },
+
+    debounce: (func, wait) => {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
     },
   };
 
@@ -429,9 +459,8 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       if (firstInvalid) {
-        const headerHeight = elements.header?.offsetHeight || 60;
         const elementPosition = firstInvalid.element.getBoundingClientRect().top + window.pageYOffset;
-        const offsetPosition = elementPosition - headerHeight - 20;
+        const offsetPosition = elementPosition - cachedHeaderHeight - 20;
 
         window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
         setTimeout(() => firstInvalid.element.focus(), 500);
@@ -707,9 +736,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
         itemEl.querySelector(".history-item-load").addEventListener("click", (e) => {
           e.stopPropagation();
-          form.preview.textContent = item.content;
-          clipboard.updateState();
+          protocol.loadTechnicalProtocol(item.content, false); // false = não rolar ainda
+
+          // Calcular posição de destino ANTES de fechar a sidebar
+          const previewTitle = document.getElementById("preview-title");
+          let targetScrollPosition = 0;
+
+          if (previewTitle) {
+            targetScrollPosition = previewTitle.offsetTop - cachedHeaderHeight - CONFIG.SCROLL_OFFSET;
+          }
+
           history.closeSidebar();
+
+          // Rolar após a sidebar fechar, usando a posição pré-calculada
+          setTimeout(() => {
+            navigation.smoothScrollTo(targetScrollPosition);
+          }, 300);
         });
 
         itemEl.querySelector(".history-item-delete").addEventListener("click", (e) => {
@@ -724,20 +766,244 @@ document.addEventListener("DOMContentLoaded", function () {
     openSidebar: () => {
       utils.setAriaHidden(elements.history.sidebar, false);
       utils.setAriaHidden(elements.history.overlay, false);
+
+      // Calcular largura da scrollbar para evitar "pulo" do layout
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
     },
 
     closeSidebar: () => {
       utils.setAriaHidden(elements.history.sidebar, true);
       utils.setAriaHidden(elements.history.overlay, true);
       document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     },
+  };
+
+  // =============================================
+  // UTILITÁRIOS DE NAVEGAÇÃO
+  // =============================================
+  const navigation = {
+    smoothScrollTo: (position) => {
+      // Marcar como scroll programático ANTES de qualquer operação
+      state.isProgrammaticScroll = true;
+
+      // Desabilitar transições CSS do header
+      if (elements.header) {
+        elements.header.classList.add("no-transition");
+      }
+
+      // Executar scroll suave
+      window.scrollTo({
+        top: position,
+        behavior: "smooth"
+      });
+
+      // Reabilitar após scroll terminar
+      setTimeout(() => {
+        // Desmarcar scroll programático
+        state.isProgrammaticScroll = false;
+
+        // Remover no-transition no próximo frame
+        requestAnimationFrame(() => {
+          if (elements.header) {
+            elements.header.classList.remove("no-transition");
+          }
+          // Atualizar header no estado correto (reutiliza handleHeaderUpdates)
+          handleHeaderUpdates();
+        });
+      }, 600);
+    },
+
+    scrollToElement: (elementId, offset = CONFIG.SCROLL_OFFSET) => {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+
+      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+      const targetPosition = elementPosition - cachedHeaderHeight - offset;
+
+      navigation.smoothScrollTo(targetPosition);
+    }
   };
 
   // =============================================
   // GERAÇÃO DE PROTOCOLO
   // =============================================
   const protocol = {
+    // Gerenciamento centralizado do estado do preview
+    loadTechnicalProtocol: (content, shouldScroll = true) => {
+      state.technicalProtocol = content;
+      state.previewMode = "technical";
+      form.preview.textContent = content;
+
+      // Mostrar toggle e marcar como técnico
+      if (elements.togglePreview.container) {
+        elements.togglePreview.container.classList.remove("hidden");
+      }
+      if (elements.togglePreview.input) {
+        elements.togglePreview.input.checked = true;
+      }
+
+      clipboard.updateState();
+
+      if (shouldScroll) {
+        navigation.scrollToElement("preview-title");
+      }
+    },
+
+    resetToHumanMode: () => {
+      state.technicalProtocol = "";
+      state.previewMode = "human";
+      form.preview.innerHTML = "";
+
+      // Esconder toggle
+      if (elements.togglePreview.container) {
+        elements.togglePreview.container.classList.add("hidden");
+      }
+      if (elements.togglePreview.input) {
+        elements.togglePreview.input.checked = false;
+      }
+
+      clipboard.updateState();
+    },
+
+    switchToMode: (mode) => {
+      if (mode === "technical" && state.technicalProtocol) {
+        state.previewMode = "technical";
+        form.preview.textContent = state.technicalProtocol;
+      } else {
+        state.previewMode = "human";
+        form.preview.innerHTML = protocol.generateHumanPreview();
+      }
+      clipboard.updateState();
+      navigation.scrollToElement("preview-title");
+    },
+
+    generateHumanPreview: () => {
+      const modo = form.modo()?.value || "FAST";
+      const idioma = form.idiomaHidden.value || "pt";
+      const countCriterios = form.criteriosTable.querySelectorAll("tr").length;
+
+      // Helper para truncar texto
+      const truncate = (text, maxLength) => {
+        const trimmed = text.trim();
+        return trimmed.length > maxLength ? trimmed.substring(0, maxLength) + "..." : trimmed;
+      };
+
+      // Helper para adicionar seção com ícone
+      const addSection = (icon, title) => `<i class="${icon}"></i> ${title}\n`;
+
+      let preview = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      preview += addSection("fas fa-clipboard-list", "RESUMO DO SEU PROMPT");
+      preview += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+      // Configurações
+      preview += addSection("fas fa-cog", "CONFIGURAÇÕES");
+      preview += `   Modo: ${modo === "FAST" ? '<i class="fas fa-bolt"></i> Rápido' : '<i class="fas fa-search"></i> Detalhado'}\n`;
+      preview += `   Idioma: ${idioma.toUpperCase()}\n`;
+      preview += `   Público: ${form.publico.value || "técnico"}\n`;
+      preview += `   Contexto: ${form.contexto.value || "primeira_vez"}\n\n`;
+
+      // Tarefa
+      const objetivoOQue = form.objetivo_o_que.value.trim();
+      if (objetivoOQue) {
+        preview += addSection("fas fa-bullseye", "SUA TAREFA");
+        preview += `   ${objetivoOQue}\n\n`;
+
+        const objetivoPorQue = form.objetivo_por_que.value.trim();
+        if (objetivoPorQue) {
+          preview += `   <i class="fas fa-lightbulb"></i> Por quê: ${objetivoPorQue}\n`;
+        }
+
+        const objetivoCriterio = form.objetivo_criterio.value.trim();
+        if (objetivoCriterio) {
+          preview += `   <i class="fas fa-check"></i> Critério de sucesso: ${objetivoCriterio}\n`;
+        }
+        preview += `\n`;
+      }
+
+      // Formato
+      const formato = form.formato.value.trim();
+      const tamanho = form.tamanho.value.trim();
+      if (formato || tamanho) {
+        preview += addSection("fas fa-ruler-combined", "FORMATO DA RESPOSTA");
+        if (formato) preview += `   Tipo: ${formato}\n`;
+        if (tamanho) preview += `   Tamanho: ${tamanho}\n`;
+        preview += `\n`;
+      }
+
+      // Prioridades
+      if (countCriterios > 0) {
+        preview += addSection("fas fa-star", `PRIORIDADES (${countCriterios} critério${countCriterios > 1 ? "s" : ""})`);
+        Array.from(form.criteriosTable.querySelectorAll("tr")).forEach((row) => {
+          const codigo = row.cells[0].textContent;
+          const peso = row.cells[1].textContent;
+          const descricao = row.cells[2].textContent;
+          const icones = {
+            M: '<i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>',
+            S: '<i class="fas fa-check-circle" style="color: #f39c12;"></i>',
+            A: '<i class="fas fa-ban" style="color: #95a5a6;"></i>',
+            D: '<i class="fas fa-database"></i>'
+          };
+          preview += `   ${icones[codigo] || icones.D} ${descricao} (peso: ${peso})\n`;
+        });
+        preview += `\n`;
+      }
+
+      // Dados
+      const dados = form.dados.value.trim();
+      if (dados) {
+        preview += addSection("fas fa-book", "DADOS FORNECIDOS");
+        preview += `   ${truncate(dados, 200)}\n\n`;
+      }
+
+      // Contexto implícito
+      const contexto = form.contexto_implicito.value.trim();
+      if (contexto) {
+        preview += addSection("fas fa-brain", "CONTEXTO ADICIONAL");
+        preview += `   ${truncate(contexto, 150)}\n\n`;
+      }
+
+      // Restrições
+      const scopeLimits = form.scopeLimits.value.trim();
+      const toolsRequired = form.toolsRequired.value.trim();
+      const otherConditions = form.otherConditions.value.trim();
+
+      if (scopeLimits || toolsRequired || otherConditions) {
+        preview += addSection("fas fa-exclamation-triangle", "RESTRIÇÕES");
+        if (scopeLimits) {
+          utils.splitLines(form.scopeLimits.value).forEach(limite => {
+            preview += `   • ${limite}\n`;
+          });
+        }
+        if (toolsRequired) {
+          utils.splitLines(form.toolsRequired.value).forEach(tool => {
+            preview += `   <i class="fas fa-wrench"></i> ${tool}\n`;
+          });
+        }
+        if (otherConditions) {
+          utils.splitLines(form.otherConditions.value).forEach(cond => {
+            preview += `   <i class="fas fa-info-circle"></i> ${cond}\n`;
+          });
+        }
+        preview += `\n`;
+      }
+
+      preview += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      preview += `<i class="fas fa-lightbulb"></i> Clique em "Gerar Prompt" para criar o protocolo completo\n`;
+
+      return preview;
+    },
+
+    updateRealtimePreview: utils.debounce(() => {
+      // Só atualizar se não houver protocolo técnico gerado ou se estiver em modo humano
+      if (!state.technicalProtocol || state.previewMode === "human") {
+        form.preview.innerHTML = protocol.generateHumanPreview();
+      }
+      clipboard.updateState();
+    }, CONFIG.REALTIME_PREVIEW_DEBOUNCE),
+
     buildSummary: () => {
       const countCriterios = form.criteriosTable.querySelectorAll("tr").length;
       const criteriosText = countCriterios === 1 ? "1 adicionado" : `${countCriterios} adicionados`;
@@ -959,7 +1225,7 @@ ${templates[modo]}
 
 <!-- /OPENPUP -->`;
 
-      form.preview.textContent = output;
+      protocol.loadTechnicalProtocol(output);
       history.save(output);
       document.dispatchEvent(new Event("protocolGenerated"));
     },
@@ -970,8 +1236,9 @@ ${templates[modo]}
   // =============================================
   const clipboard = {
     updateState: () => {
-      const content = form.preview.textContent.trim();
-      if (elements.copy.btn) elements.copy.btn.disabled = content.length === 0;
+      // Habilitar botão APENAS se houver protocolo técnico gerado
+      const hasProtocol = state.technicalProtocol && state.technicalProtocol.trim().length > 0;
+      if (elements.copy.btn) elements.copy.btn.disabled = !hasProtocol;
     },
 
     copy: async (text) => {
@@ -1068,7 +1335,9 @@ ${templates[modo]}
     form.ifNoResponse.value = "assume";
     form.customChecklist.value = "";
     form.criteriosTable.innerHTML = "";
-    form.preview.textContent = "";
+
+    // Resetar estado do preview
+    protocol.resetToHumanMode();
   };
 
   // =============================================
@@ -1139,27 +1408,87 @@ ${templates[modo]}
     });
   }
 
-  // Header shrink
-  window.addEventListener("scroll", () => {
-    elements.header?.classList.toggle("shrink", window.scrollY > CONFIG.SCROLL_OFFSET);
-  }, { passive: true });
+  // Listener unificado para mudanças do header durante scroll
+  const handleHeaderUpdates = () => {
+    // Ignorar se página não está pronta ou durante scroll programático
+    if (!state.isPageReady || state.isProgrammaticScroll) return;
 
-  // Barra de progresso no header
-  const handleHeaderProgress = () => {
-    if (!elements.progress.original || !elements.progress.header.wrapper) return;
+    // Usar RAF para batching (leituras e escritas separadas)
+    requestAnimationFrame(() => {
+      if (state.isProgrammaticScroll) return; // Verificar novamente após RAF
 
-    const rect = elements.progress.original.getBoundingClientRect();
-    const isHidden = rect.top < (elements.header?.offsetHeight || 0);
+      // Fase de LEITURA (não causa reflow pois não muda DOM)
+      const scrollY = window.scrollY;
+      const shouldShrink = scrollY > CONFIG.SCROLL_OFFSET;
 
-    if (isHidden !== state.isHeaderProgressVisible) {
-      state.isHeaderProgressVisible = isHidden;
-      elements.header?.classList.toggle('with-progress-bar', isHidden);
-      elements.progress.header.wrapper.classList.toggle('visible', isHidden);
-    }
+      let isProgressHidden = false;
+      if (elements.progress.original) {
+        const rect = elements.progress.original.getBoundingClientRect();
+        isProgressHidden = rect.top < cachedHeaderHeight;
+      }
+
+      // Fase de ESCRITA (todas as mudanças de DOM juntas)
+      elements.header?.classList.toggle("shrink", shouldShrink);
+
+      if (elements.progress.header.wrapper && isProgressHidden !== state.isHeaderProgressVisible) {
+        state.isHeaderProgressVisible = isProgressHidden;
+        elements.header?.classList.toggle('with-progress-bar', isProgressHidden);
+        elements.progress.header.wrapper.classList.toggle('visible', isProgressHidden);
+      }
+    });
   };
 
-  window.addEventListener("scroll", handleHeaderProgress, { passive: true });
-  window.addEventListener("resize", handleHeaderProgress);
+  // Atualizar cache de altura no resize
+  const updateHeaderHeightCache = () => {
+    if (elements.header) {
+      cachedHeaderHeight = elements.header.offsetHeight;
+    }
+    handleHeaderUpdates();
+  };
+
+  window.addEventListener("scroll", handleHeaderUpdates, { passive: true });
+  window.addEventListener("resize", updateHeaderHeightCache);
+
+  // Inicializar header no estado correto quando página carregar
+  const initializeHeader = () => {
+    if (!elements.header) return;
+
+    // Cachear altura do header
+    cachedHeaderHeight = elements.header.offsetHeight;
+
+    // Adicionar no-transition temporariamente
+    elements.header.classList.add("no-transition");
+
+    // Definir estado inicial (LEITURA)
+    const scrollY = window.scrollY;
+    const shouldShrink = scrollY > CONFIG.SCROLL_OFFSET;
+
+    let isProgressHidden = false;
+    if (elements.progress.original) {
+      const rect = elements.progress.original.getBoundingClientRect();
+      isProgressHidden = rect.top < cachedHeaderHeight;
+    }
+
+    // Aplicar estado inicial (ESCRITA)
+    elements.header.classList.toggle("shrink", shouldShrink);
+
+    if (elements.progress.header.wrapper) {
+      state.isHeaderProgressVisible = isProgressHidden;
+      elements.header.classList.toggle('with-progress-bar', isProgressHidden);
+      elements.progress.header.wrapper.classList.toggle('visible', isProgressHidden);
+    }
+
+    // Remover no-transition e marcar como pronto
+    requestAnimationFrame(() => {
+      if (elements.header) {
+        elements.header.classList.remove("no-transition");
+      }
+      state.isPageReady = true;
+    });
+  };
+
+  // Executar inicialização
+  requestAnimationFrame(initializeHeader);
 
   // Modal de confirmação
   if (elements.modal.confirm) {
@@ -1226,6 +1555,60 @@ ${templates[modo]}
   form.criteriosTable.addEventListener("DOMSubtreeModified", validation.updateIndicator);
   validation.updateIndicator();
 
+  // =============================================
+  // PREVIEW EM TEMPO REAL
+  // =============================================
+  const allFormFields = [
+    form.objetivo_o_que,
+    form.objetivo_por_que,
+    form.objetivo_criterio,
+    form.dados,
+    form.contexto_implicito,
+    form.formato,
+    form.tamanho,
+    form.publico,
+    form.overflow,
+    form.contexto,
+    form.externalSources,
+    form.maxQuestions,
+    form.ifNoResponse,
+    form.scopeLimits,
+    form.toolsRequired,
+    form.otherConditions,
+    form.customChecklist,
+  ];
+
+  // Adicionar listeners para campos de texto
+  allFormFields.forEach(field => {
+    if (field) {
+      field.addEventListener("input", protocol.updateRealtimePreview);
+      field.addEventListener("change", protocol.updateRealtimePreview);
+    }
+  });
+
+  // Listener para radio buttons de modo
+  document.querySelectorAll('input[name="modo"]').forEach(radio => {
+    radio.addEventListener("change", protocol.updateRealtimePreview);
+  });
+
+  // Listener para mudanças na tabela de critérios
+  form.criteriosTable.addEventListener("DOMSubtreeModified", protocol.updateRealtimePreview);
+
+  // Listener para mudanças no idioma
+  elements.idioma.input.addEventListener("input", protocol.updateRealtimePreview);
+
+  // Inicializar preview humanizado
+  protocol.updateRealtimePreview();
+
+  // =============================================
+  // TOGGLE PREVIEW MODE
+  // =============================================
+  if (elements.togglePreview.input) {
+    elements.togglePreview.input.addEventListener("change", (e) => {
+      protocol.switchToMode(e.target.checked ? "technical" : "human");
+    });
+  }
+
   // Histórico
   elements.history.clearBtn?.addEventListener("click", history.clear);
   elements.history.fab?.addEventListener("click", history.openSidebar);
@@ -1269,15 +1652,39 @@ ${templates[modo]}
     document.addEventListener("protocolGenerated", clipboard.updateState);
 
     elements.copy.btn.addEventListener("click", async () => {
-      const text = form.preview.textContent;
-      if (!text) return;
+      // Sempre copiar o protocolo técnico quando disponível
+      const textToCopy = state.technicalProtocol || form.preview.textContent;
 
-      const ok = await clipboard.copy(text);
-      clipboard.showFeedback(
-        ok ? "Prompt copiado com sucesso!" : "Erro ao copiar! Verifique console ou contexto (HTTPS/localhost).",
-        ok
-      );
+      if (!textToCopy || !textToCopy.trim()) {
+        clipboard.showFeedback("Não há conteúdo para copiar", false);
+        return;
+      }
+
+      const ok = await clipboard.copy(textToCopy);
+
+      if (ok) {
+        clipboard.showFeedback("Prompt copiado com sucesso!", true);
+
+        // Se estiver no modo humanizado e tiver protocolo técnico, mostrar modal explicativo
+        if (state.previewMode === "human" && state.technicalProtocol && elements.modal.copyInfo) {
+          setTimeout(() => {
+            utils.setModalState(elements.modal.copyInfo, true);
+            accessibility.trapFocus(elements.modal.copyInfo);
+            (elements.modal.copyInfo.querySelector("h2") || elements.modal.copyInfo.querySelector(".modal-title"))?.focus();
+          }, 300);
+        }
+      } else {
+        clipboard.showFeedback("Erro ao copiar! Verifique console ou contexto (HTTPS/localhost).", false);
+      }
     });
+  }
+
+  // Modal de info de cópia
+  if (elements.modal.copyInfo) {
+    const closeCopyInfo = () => utils.setModalState(elements.modal.copyInfo, false);
+
+    document.getElementById("copy-info-ok")?.addEventListener("click", closeCopyInfo);
+    modals.addCloseListeners(elements.modal.copyInfo, closeCopyInfo);
   }
 
   // Navegação global por teclado

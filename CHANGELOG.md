@@ -8,6 +8,48 @@ Todas as mudanças significativas neste projeto serão documentadas neste arquiv
 
 _Nenhuma mudança pendente no momento. Consulte [TODO.md](TODO.md) para roadmap de funcionalidades planejadas._
 
+## [2.1.0] – 2026-01-25
+
+### Adicionado
+
+#### Pré-visualização em Tempo Real
+
+**Preview Humanizado:**
+- **Visualização humanizada do protocolo** com ícones Font Awesome para melhor legibilidade
+  - Substituição de emojis por ícones profissionais (fas fa-clipboard-list, fas fa-cog, fas fa-bullseye, etc.)
+  - Seções organizadas visualmente: Configurações, Tarefa, Formato, Prioridades, Dados, Contexto, Restrições
+  - Truncamento automático de textos longos para preview conciso
+  - Contadores de critérios e informações contextuais
+- **Atualização automática em tempo real** conforme usuário preenche campos
+  - Debounce de 500ms para otimizar performance
+  - Listeners em todos os campos do formulário (input, change, DOMSubtreeModified)
+  - Preview atualiza sem necessidade de clicar "Gerar Prompt"
+- **Toggle de visualização** (Material Design) para alternar entre modos:
+  - Modo Humanizado: visualização amigável com ícones e formatação
+  - Modo Técnico: protocolo completo com tags (TASK, DATA, etc.)
+  - Switch animado com estados visuais claros
+  - Ícones descritivos (fas fa-user, fas fa-code)
+  - Aparece automaticamente após gerar protocolo
+- **Modal informativo sobre cópia**:
+  - Explica que o protocolo técnico é sempre copiado (não o humanizado)
+  - Orientação sobre uso do toggle
+  - Aparece quando usuário copia em modo humanizado
+
+**Gerenciamento de Estado:**
+- **Centralização do estado do preview** com funções DRY:
+  - `loadTechnicalProtocol()`: carrega protocolo e atualiza UI
+  - `resetToHumanMode()`: reseta para modo inicial
+  - `switchToMode()`: alterna entre modos com scroll automático
+- **State tracking**:
+  - `state.previewMode`: "human" ou "technical"
+  - `state.technicalProtocol`: armazena protocolo gerado
+- **Integração com histórico**: ao carregar prompt do histórico, toggle aparece automaticamente
+
+**Recursos Visuais:**
+- **Font Awesome 6.5.1 CDN** integrado para biblioteca de ícones
+- **Estilos do toggle** com transições suaves e estados hover/focus
+- **CSS otimizado** para componentes de preview (cores, espaçamento, responsividade)
+
 ## [2.0.0] – 2026-01-17
 
 > **VERSÃO ESTÁVEL - RECOMENDADA**
