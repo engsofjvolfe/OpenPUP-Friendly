@@ -134,18 +134,19 @@
 - **Validação**: pelo menos `objetivo_o_que` obrigatório; formato obrigatório.
 - **Preview**: renderiza dentro de `<TASK>` delimiter com três campos estruturados.&#x20;
 
-### Etapa 2 — Prioridades
+### Etapa 2 — CRITERIA_REGISTRY
 
-- **Critérios Fixos** (sempre incluídos no protocolo):
-  - **M1**: A IA deve cumprir todas as etapas do protocolo, com execução obrigatória das seções 5 a 9. Falhas nessas etapas devem acionar bloqueio na etapa 8. (peso = 1.0)
-  - **M2**: A IA deve interromper o fluxo se qualquer etapa anterior estiver incompleta, inválida ou não validada. Não é permitido pular etapas. (peso = 1.0)
+- **Meta-Constraints** (fixos, v2.1):
+  - **[[M-PROTO-1]]**: Executar etapas 5-9 sequencialmente. Falha bloqueia em step 8. (peso = 1.0)
+  - **[[M-PROTO-2]]**: Interromper se etapa anterior incompleta ou inválida. (peso = 1.0)
 
 - **Inputs** (critérios personalizados):
   - Tabela dinâmica para itens `M`, `S`, `A`, `D` com `codigo`, `peso` (slider -1.0…1.0 em steps de 0.1) e `descricao`.
 - **UX**:
   - Destaque visual para `peso >= 1.0` (MUST) e `peso <= -1.0` (AVOID).
   - Aviso de conflito (ex.: dois critérios mutuamente exclusivos ambos com peso alto).
-- **Preview**: lista textual com legenda `M=MUST | S=SHOULD | A=AVOID | D=DATA`, seguida dos critérios fixos e depois os personalizados. &#x20;
+- **Preview**: lista textual com legenda `M=MUST | S=SHOULD | A=AVOID`, seguida dos meta-constraints e depois task-constraints.
+- **REGISTRY_RULE**: Todas as referências em steps 5-8 devem existir neste registro. &#x20;
 
 ### Etapa 3 — Dados (fonte da verdade)
 
@@ -278,12 +279,17 @@ Tamanho-alvo: [tamanho]
 </TASK>
 
 ---
-## 2) PRIORIDADES
-**Legenda:** M=MUST | S=SHOULD | A=AVOID | D=DATA
+## 2) CRITERIA_REGISTRY
+**Legenda:** M=MUST | S=SHOULD | A=AVOID
 
-M: A IA deve cumprir todas as etapas do protocolo, com execução obrigatória das seções 5 a 9. Falhas nessas etapas devem acionar bloqueio na etapa 8. # peso = 1.0
-M: A IA deve interromper o fluxo se qualquer etapa anterior estiver incompleta, inválida ou não validada. Não é permitido pular etapas. # peso = 1.0
-[critérios personalizados no formato: CODIGO: descrição # peso = X.X]
+**Meta-Constraints:**
+[[M-PROTO-1]]: Executar etapas 5-9 sequencialmente. Falha bloqueia em step 8. # peso=1.0
+[[M-PROTO-2]]: Interromper se etapa anterior incompleta ou inválida. # peso=1.0
+
+**Task-Constraints:**
+[critérios personalizados no formato: CODIGO: descrição # peso=X.X]
+
+**REGISTRY_RULE:** All criterion references in steps 5-8 MUST exist in this registry. Reference to non-existent criterion := HALT.
 
 ---
 ## 3) DADOS
@@ -382,13 +388,18 @@ Tamanho-alvo: 250–300 palavras
 </TASK>
 
 ---
-## 2) PRIORIDADES
-**Legenda:** M=MUST | S=SHOULD | A=AVOID | D=DATA
+## 2) CRITERIA_REGISTRY
+**Legenda:** M=MUST | S=SHOULD | A=AVOID
 
-M: A IA deve cumprir todas as etapas do protocolo, com execução obrigatória das seções 5 a 9. Falhas nessas etapas devem acionar bloqueio na etapa 8. # peso = 1.0
-M: A IA deve interromper o fluxo se qualquer etapa anterior estiver incompleta, inválida ou não validada. Não é permitido pular etapas. # peso = 1.0
-M: Incluir pelo menos 3 evidências concretas # peso = 1.0
-S: Usar linguagem acessível # peso = 0.5
+**Meta-Constraints:**
+[[M-PROTO-1]]: Executar etapas 5-9 sequencialmente. Falha bloqueia em step 8. # peso=1.0
+[[M-PROTO-2]]: Interromper se etapa anterior incompleta ou inválida. # peso=1.0
+
+**Task-Constraints:**
+M: Incluir pelo menos 3 evidências concretas # peso=1.0
+S: Usar linguagem acessível # peso=0.5
+
+**REGISTRY_RULE:** All criterion references in steps 5-8 MUST exist in this registry. Reference to non-existent criterion := HALT.
 ```
 
 > Este exemplo demonstra **formatação idêntica** ao protocolo atual (v2) para otimizar **copiar/colar** em IAs comerciais.&#x20;

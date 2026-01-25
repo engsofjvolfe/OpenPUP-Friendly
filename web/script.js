@@ -16,17 +16,30 @@ const CONFIG = {
   MODAL_CLOSE_DELAY: 20,
   SCROLL_OFFSET: 20,
   VALID_CODES: new Set(["M", "S", "A", "D"]),
+  REALTIME_PREVIEW_DEBOUNCE: 500,
 };
 
 // =============================================
 // INICIALIZAÇÃO
 // =============================================
+// Desabilitar scroll restoration do navegador (evita scroll automático após F5)
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   // Estado Global
   const state = {
     languages: [],
     isHeaderProgressVisible: false,
+    previewMode: "human", // "human" ou "technical"
+    technicalProtocol: "", // Armazena o protocolo técnico gerado
+    isProgrammaticScroll: false, // Flag para desabilitar shrink durante scroll programático
+    isPageReady: false, // Flag para garantir que página está pronta antes de processar scroll
   };
+
+  // Cache de altura do header (evita reflows)
+  let cachedHeaderHeight = 60;
 
   // Cache de Elementos DOM
   const elements = {
@@ -39,6 +52,7 @@ document.addEventListener("DOMContentLoaded", function () {
       intro: document.getElementById("intro-modal"),
       confirm: document.getElementById("confirmation-modal"),
       validation: document.getElementById("validation-modal"),
+      copyInfo: document.getElementById("copy-info-modal"),
     },
     progress: {
       original: document.getElementById("completeness-indicator-original"),
@@ -56,6 +70,10 @@ document.addEventListener("DOMContentLoaded", function () {
     copy: {
       btn: document.getElementById("copy-prompt"),
       feedback: document.getElementById("copy-feedback"),
+    },
+    togglePreview: {
+      input: document.getElementById("toggle-preview-mode"),
+      container: document.getElementById("toggle-container"),
     },
     history: {
       fab: document.getElementById("history-fab"),
@@ -101,6 +119,108 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   // =============================================
+  // VALIDATION RULES (Layer Zero - v2.1)
+  // =============================================
+  const validationRules = {
+    // Verifica se valor está vazio
+    isEmpty: (value) => !value || value.trim() === "",
+
+    // Detecta placeholders genéricos no campo DATA
+    isPlaceholder: (value) => {
+      const placeholderPatterns = [
+        /quaisquer dados/i,
+        /any data/i,
+        /cualquier dato/i,
+        /dados.*necess[aá]rios?/i,
+        /insert.*data/i,
+        /cole.*aqui/i,
+        /paste.*here/i
+      ];
+      return placeholderPatterns.some(pattern => pattern.test(value));
+    },
+
+    // Valida conflito entre external_sources policy e disponibilidade de DATA
+    dataPolicyConflict: (externalSources, dadosContent) => {
+      if (externalSources === "negado" &&
+          (validationRules.isEmpty(dadosContent) || validationRules.isPlaceholder(dadosContent))) {
+        return {
+          type: "error",
+          code: "DATA_POLICY_CONFLICT",
+          message: "⚠️ CONFLITO DE DADOS: Você configurou 'Fontes externas: negado' mas o campo <DADOS> está vazio ou contém apenas placeholder.\n\n" +
+                   "Para resolver, escolha uma opção:\n" +
+                   "1. Preencha o campo DADOS com informações concretas\n" +
+                   "2. OU mude 'Fontes externas' para 'permitido' na seção Restrições\n\n" +
+                   "Sem uma dessas mudanças, a IA não poderá executar sem violar suas próprias regras."
+        };
+      }
+      return null;
+    },
+
+    // Detecta M-criteria mutuamente exclusivos
+    criteriaConflicts: (criterios) => {
+      const conflicts = [];
+      const musts = criterios.filter(c => c.codigo === "M");
+
+      // Padrões de conflito conhecidos
+      const conflictPatterns = [
+        {
+          name: "tamanho",
+          p1: /m[aá]x\w*\s*(\d+)\s*palavras?/i,
+          p2: /m[ií]n\w*\s*(\d+)\s*palavras?/i,
+          check: (max, min) => parseInt(max) < parseInt(min),
+          message: "Conflito de tamanho: máximo menor que mínimo"
+        },
+        {
+          name: "tom",
+          p1: /conciso|breve|resumido|sucinto/i,
+          p2: /detalh|extenso|completo|aprofundado/i,
+          message: "Conflito de tom: conciso vs detalhado"
+        },
+        {
+          name: "público",
+          p1: /t[eé]cnic|especializado|acad[eê]mico|avan[cç]ado/i,
+          p2: /leigo|simples|acess[ií]vel|b[aá]sico/i,
+          message: "Conflito de público: técnico vs leigo"
+        }
+      ];
+
+      for (let i = 0; i < musts.length; i++) {
+        for (let j = i + 1; j < musts.length; j++) {
+          const d1 = musts[i].descricao.toLowerCase();
+          const d2 = musts[j].descricao.toLowerCase();
+
+          conflictPatterns.forEach(pat => {
+            const m1 = d1.match(pat.p1);
+            const m2 = d2.match(pat.p2);
+
+            if (m1 && m2) {
+              let isConflict = true;
+
+              // Se tem função de verificação, usa ela
+              if (pat.check && m1[1] && m2[1]) {
+                isConflict = pat.check(m1[1], m2[1]);
+              }
+
+              if (isConflict) {
+                conflicts.push({
+                  type: "warning",
+                  code: `CONFLICT_${pat.name.toUpperCase()}`,
+                  message: `⚠️ ${pat.message}:\n` +
+                           `   "${musts[i].descricao.substring(0, 60)}..."\n` +
+                           `   vs\n` +
+                           `   "${musts[j].descricao.substring(0, 60)}..."`
+                });
+              }
+            }
+          });
+        }
+      }
+
+      return conflicts;
+    }
+  };
+
+  // =============================================
   // UTILITÁRIOS GENÉRICOS
   // =============================================
   const utils = {
@@ -135,6 +255,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     updateTextContent: (element, text) => {
       if (element) element.textContent = text;
+    },
+
+    debounce: (func, wait) => {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
     },
   };
 
@@ -385,6 +517,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const errors = [];
       const warnings = [];
 
+      // Validações essenciais existentes
       if (!form.objetivo_o_que.value.trim()) {
         errors.push("Campo 'O que a IA deve fazer' está vazio");
       }
@@ -392,6 +525,25 @@ document.addEventListener("DOMContentLoaded", function () {
         errors.push("Campo 'Dados' está vazio - a IA não terá contexto para trabalhar");
       }
 
+      // NOVO: Layer Zero - Validação de conflito DATA policy
+      const dataConflict = validationRules.dataPolicyConflict(
+        form.externalSources.value,
+        form.dados.value
+      );
+      if (dataConflict) {
+        errors.push(dataConflict.message);
+      }
+
+      // NOVO: Layer Zero - Detecção de M-criteria conflitantes
+      const criterios = Array.from(form.criteriosTable.querySelectorAll("tr")).map(row => ({
+        codigo: row.cells[0].textContent,
+        descricao: row.cells[2].textContent
+      }));
+
+      const criteriaWarnings = validationRules.criteriaConflicts(criterios);
+      warnings.push(...criteriaWarnings.map(w => w.message));
+
+      // Validações de completude existentes
       if (!form.objetivo_por_que.value.trim()) {
         warnings.push("Campo 'Por que você precisa disso' está vazio - isso ajuda a IA a entender o contexto");
       }
@@ -429,9 +581,8 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       if (firstInvalid) {
-        const headerHeight = elements.header?.offsetHeight || 60;
         const elementPosition = firstInvalid.element.getBoundingClientRect().top + window.pageYOffset;
-        const offsetPosition = elementPosition - headerHeight - 20;
+        const offsetPosition = elementPosition - cachedHeaderHeight - 20;
 
         window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
         setTimeout(() => firstInvalid.element.focus(), 500);
@@ -707,9 +858,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
         itemEl.querySelector(".history-item-load").addEventListener("click", (e) => {
           e.stopPropagation();
-          form.preview.textContent = item.content;
-          clipboard.updateState();
+          protocol.loadTechnicalProtocol(item.content, false); // false = não rolar ainda
+
+          // Calcular posição de destino ANTES de fechar a sidebar
+          const previewTitle = document.getElementById("preview-title");
+          let targetScrollPosition = 0;
+
+          if (previewTitle) {
+            targetScrollPosition = previewTitle.offsetTop - cachedHeaderHeight - CONFIG.SCROLL_OFFSET;
+          }
+
           history.closeSidebar();
+
+          // Rolar após a sidebar fechar, usando a posição pré-calculada
+          setTimeout(() => {
+            navigation.smoothScrollTo(targetScrollPosition);
+          }, 300);
         });
 
         itemEl.querySelector(".history-item-delete").addEventListener("click", (e) => {
@@ -724,20 +888,722 @@ document.addEventListener("DOMContentLoaded", function () {
     openSidebar: () => {
       utils.setAriaHidden(elements.history.sidebar, false);
       utils.setAriaHidden(elements.history.overlay, false);
+
+      // Calcular largura da scrollbar para evitar "pulo" do layout
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
     },
 
     closeSidebar: () => {
       utils.setAriaHidden(elements.history.sidebar, true);
       utils.setAriaHidden(elements.history.overlay, true);
       document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     },
+  };
+
+  // =============================================
+  // UTILITÁRIOS DE NAVEGAÇÃO
+  // =============================================
+  const navigation = {
+    smoothScrollTo: (position) => {
+      // Marcar como scroll programático ANTES de qualquer operação
+      state.isProgrammaticScroll = true;
+
+      // Desabilitar transições CSS do header
+      if (elements.header) {
+        elements.header.classList.add("no-transition");
+      }
+
+      // Executar scroll suave
+      window.scrollTo({
+        top: position,
+        behavior: "smooth"
+      });
+
+      // Reabilitar após scroll terminar
+      setTimeout(() => {
+        // Desmarcar scroll programático
+        state.isProgrammaticScroll = false;
+
+        // Remover no-transition no próximo frame
+        requestAnimationFrame(() => {
+          if (elements.header) {
+            elements.header.classList.remove("no-transition");
+          }
+          // Atualizar header no estado correto (reutiliza handleHeaderUpdates)
+          handleHeaderUpdates();
+        });
+      }, 600);
+    },
+
+    scrollToElement: (elementId, offset = CONFIG.SCROLL_OFFSET) => {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+
+      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+      const targetPosition = elementPosition - cachedHeaderHeight - offset;
+
+      navigation.smoothScrollTo(targetPosition);
+    }
+  };
+
+  // =============================================
+  // PROTOCOL GUARDS CONFIG (Layer Zero - v2.1)
+  // =============================================
+
+  // Configuração de Meta-Constraints do protocolo
+  const PROTOCOL_META_CONSTRAINTS = {
+    version: "2.1.0",
+    constraints: {
+      "[[M-PROTO-1]]": {
+        descricao: "A IA deve cumprir todas as etapas do protocolo, com execução obrigatória das seções 5 a 9. Falhas nessas etapas devem acionar bloqueio na etapa 8.",
+        peso: 1.0,
+        tipo: "procedural"
+      },
+      "[[M-PROTO-2]]": {
+        descricao: "A IA deve interromper o fluxo se qualquer etapa anterior estiver incompleta, inválida ou não validada. Não é permitido pular etapas.",
+        peso: 1.0,
+        tipo: "procedural"
+      }
+    }
+  };
+
+  // Configuração de Guards (Layer Zero: structural control only)
+  const guardConfig = {
+    version: "2.1.0",
+
+    invariants: {
+      INV_001: {
+        name: "DATA_POLICY",
+        rule: "external_sources == 'negado' AND (<DATA>.empty OR <DATA>.is_placeholder)",
+        action: "HALT",
+        output: "DIAGNOSTIC_INV_001"
+      },
+
+      INV_002: {
+        name: "MUST_FEASIBILITY",
+        rule: "EXISTS M WHERE NOT satisfiable(M, available_resources)",
+        action: "HALT",
+        output: "DIAGNOSTIC_INV_002"
+      },
+
+      INV_003: {
+        name: "NO_CONFLICTS",
+        rule: "EXISTS (M_i, M_j) WHERE conflict(M_i, M_j)",
+        action: "HALT",
+        output: "DIAGNOSTIC_INV_003"
+      },
+
+      INV_004: {
+        name: "REGISTRY_INTEGRITY",
+        rule: "EXISTS reference WHERE reference NOT IN CRITERIA_REGISTRY",
+        action: "HALT",
+        output: "DIAGNOSTIC_INV_004"
+      }
+    },
+
+    stateMachine: {
+      initialState: "PREVALIDATION",
+
+      states: {
+        PREVALIDATION: {
+          description: "Check protocol invariants before execution",
+          allowedSteps: [],
+          requiredChecks: ["INV_001", "INV_002", "INV_003"],
+          transitions: {
+            onPass: "VALIDATION_PHASE",
+            onFail: "BLOCKED"
+          }
+        },
+
+        VALIDATION_PHASE: {
+          description: "Execute analysis, planning, checklist, stop decision",
+          allowedSteps: [5, 6, 7, 8],
+          responseFormat: "JSON_ONLY",
+          narrativeAllowed: false,
+          transitions: {
+            onPass: {
+              condition: "step8.bloqueado == false",
+              thenState: "EXECUTION_PHASE",
+              elseState: "BLOCKED"
+            },
+            onFail: "BLOCKED"
+          }
+        },
+
+        EXECUTION_PHASE: {
+          description: "Generate final deliverable",
+          allowedSteps: [9],
+          prerequisiteState: "VALIDATION_PHASE",
+          responseFormat: "natural_language",
+          mustFollowValidatedPlan: true
+        },
+
+        BLOCKED: {
+          description: "Execution stopped due to violations",
+          allowedSteps: [],
+          outputMode: "diagnostic_only",
+          step9Suppression: true
+        }
+      }
+    }
+  };
+
+  // Layer Zero: structural YAML rendering (no narrative control)
+  function renderGuardYAML(config) {
+    const invs = Object.entries(config.invariants).map(([id, inv]) =>
+      `    ${id}:
+      violation_if: "${inv.rule}"
+      output: ${inv.output}`
+    ).join('\n');
+
+    const states = Object.entries(config.stateMachine.states).map(([name, state]) => {
+      let stateYAML = `    ${name}:\n`;
+      if (state.allowedSteps !== undefined) stateYAML += `      allowed_steps: [${state.allowedSteps.join(', ')}]\n`;
+      if (state.requiredChecks) stateYAML += `      required_checks: [${state.requiredChecks.join(', ')}]\n`;
+      if (state.responseFormat) stateYAML += `      response_format: ${state.responseFormat}\n`;
+      if (state.transitions) {
+        if (typeof state.transitions.onPass === 'string') {
+          stateYAML += `      on_pass: ${state.transitions.onPass}\n`;
+        } else if (state.transitions.onPass?.condition) {
+          stateYAML += `      on_pass:\n        condition: "${state.transitions.onPass.condition}"\n        then: ${state.transitions.onPass.thenState}\n        else: ${state.transitions.onPass.elseState}\n`;
+        }
+        if (state.transitions.onFail) {
+          stateYAML += `      on_fail: ${state.transitions.onFail}\n`;
+        }
+      }
+      if (state.prerequisiteState) stateYAML += `      prerequisite: "step8.bloqueado == false"\n`;
+      if (state.outputMode) stateYAML += `      output_mode: ${state.outputMode}\n`;
+      return stateYAML;
+    }).join('\n');
+
+    return `\`\`\`yaml
+OPENPUP_GUARDS:
+  version: "${config.version}"
+
+  invariants:
+${invs}
+
+  state_machine:
+    current: ${config.stateMachine.initialState}
+
+${states}
+\`\`\`
+
+---`;
+  }
+
+  // Função para construir seção CRITERIA_REGISTRY (Layer Zero)
+  function buildPriorities(userCriterios) {
+    const metaRefs = Object.entries(PROTOCOL_META_CONSTRAINTS.constraints)
+      .map(([ref, def]) => `${ref}: ${def.descricao} # peso=${def.peso}`)
+      .join('\n');
+
+    const userCrits = userCriterios
+      .map(c => `${c.codigo}: ${c.descricao} # peso=${c.peso}`)
+      .join('\n');
+
+    return `## 2) CRITERIA_REGISTRY
+**Legenda:** M=MUST | S=SHOULD | A=AVOID
+
+**Meta-Constraints:**
+${metaRefs}
+
+**Task-Constraints:**
+${userCrits || "(nenhum critério customizado)"}
+
+**REGISTRY_RULE:** All criterion references in steps 5-8 MUST exist in this registry. Reference to non-existent criterion := HALT.`;
+  }
+
+  // =============================================
+  // LAYER ZERO: JSON Schema Factory
+  // =============================================
+
+  const schemaFactory = {
+    // Campos base para todos os schemas
+    base: (stepNumber, stepName) => ({
+      step: `${stepNumber}_${stepName}`,
+      _meta: {
+        version: "2.1.0",
+        format: "strict_json",
+        text_outside_json_forbidden: true
+      }
+    }),
+
+    // Step 5: Análise
+    step5() {
+      return {
+        ...this.base(5, "analysis"),
+        data_validation: {
+          data_section_empty: "boolean",
+          data_is_placeholder: "boolean",
+          data_content_preview: "string (primeiros 100 chars)",
+          external_sources_policy: "permitido|negado",
+          policy_conflict_detected: "boolean",
+          conflict_reason: "string|null"
+        },
+        lacunas: [{
+          item: "string",
+          criticidade: "alta|media|baixa",
+          impede_must: ["array of M-codes"]
+        }],
+        assuncoes: [{
+          item: "string",
+          justificativa: "string"
+        }],
+        riscos: [{
+          item: "string",
+          probabilidade: "alta|media|baixa",
+          impacto: "alto|medio|baixo"
+        }],
+        must_validation: [{
+          codigo: "string (M-code)",
+          satisfazivel: "boolean",
+          justificativa: "string",
+          resource_check: {
+            required: ["array"],
+            available: ["array"],
+            missing: ["array"]
+          }
+        }],
+        registry_validation: {
+          all_referenced_criteria_exist: "boolean",
+          invalid_references: ["array"]
+        }
+      };
+    },
+
+    // Step 6: Plano
+    step6() {
+      return {
+        ...this.base(6, "plan"),
+        steps: [{
+          numero: "number",
+          acao: "string",
+          entregavel: "string",
+          addresses_criteria: ["array of criterion codes"],
+          depends_on_step: "number|null",
+          success_criteria: "string"
+        }],
+        tamanho_estimado: "string",
+        dependencies_check: {
+          step5_completed: "boolean",
+          step5_registry_valid: "boolean",
+          data_sufficient_for_plan: "boolean",
+          all_musts_addressed: "boolean",
+          no_blocks_detected: "boolean"
+        },
+        ready_exec: "boolean"
+      };
+    },
+
+    // Step 7: Checklist
+    step7(customChecklistItems = []) {
+      const standardItems = [
+        {
+          id: "etapas_anteriores",
+          label: "Etapas 5-6 concluídas antes da entrega"
+        },
+        {
+          id: "musts_cumpridos",
+          label: "Todos MUST cumpridos"
+        },
+        {
+          id: "shoulds_atendidos",
+          label: "SHOULD atendidos quando possível"
+        },
+        {
+          id: "avoid_nao_violado",
+          label: "Nenhum AVOID violado"
+        },
+        {
+          id: "tamanho_formato",
+          label: "Tamanho e formato conforme Tarefa"
+        },
+        {
+          id: "uso_exclusivo_dados",
+          label: "Uso exclusivo dos Dados fornecidos"
+        },
+        {
+          id: "incertezas_qualificadas",
+          label: "Incertezas qualificadas"
+        }
+      ];
+
+      const customItems = customChecklistItems.map(cc => ({
+        id: `custom_${cc.replace(/\s+/g, '_').substring(0, 20)}`,
+        label: cc
+      }));
+
+      return {
+        ...this.base(7, "checklist"),
+        items: [...standardItems, ...customItems].map(item => ({
+          id: item.id,
+          label: item.label,
+          checked: "boolean",
+          verification_evidence: "string",
+          honest_assessment: "boolean",
+          data_sources_used: ["array"],
+          ...(item.extraFields || {})
+        })),
+        overall_honesty_declaration: "string",
+        detected_violations: ["array"],
+        failure_propagation: {
+          any_honest_assessment_false: "boolean",
+          any_checked_false: "boolean",
+          force_block_step8: "boolean"
+        }
+      };
+    },
+
+    // Step 8: Stop Decision
+    step8() {
+      return {
+        ...this.base(8, "stop_decision"),
+        integrity_test: {
+          all_musts_really_met: "boolean",
+          used_only_authorized_data: "boolean",
+          have_objective_justification_for_unblock: "boolean",
+          reasoning: "string"
+        },
+        validation_summary: {
+          step5_data_validation_passed: "boolean",
+          step5_registry_validation_passed: "boolean",
+          step6_ready_exec_true: "boolean",
+          step7_all_honest_true: "boolean",
+          step7_force_block: "boolean",
+          any_critical_issues: "boolean",
+          issues_list: ["array"]
+        },
+        bloqueado: "boolean",
+        motivo: "string",
+        proposta: "string",
+        explicacao_humana: "string"
+      };
+    },
+
+    // Renderiza schema como string JSON formatada
+    render(schema) {
+      return JSON.stringify(schema, null, 2)
+        .replace(/"boolean"/g, 'boolean')
+        .replace(/"string"/g, 'string')
+        .replace(/"string \((.*?)\)"/g, 'string ($1)')
+        .replace(/"number"/g, 'number')
+        .replace(/"number\|null"/g, 'number|null')
+        .replace(/"(\[(.*?)\])"/g, '[$2]')
+        .replace(/"\[(array.*?)\]"/g, '[$1]');
+    }
+  };
+
+  // =============================================
+  // LAYER ZERO: Template Builder (DRY)
+  // =============================================
+
+  const templateBuilder = {
+    // Instruções compartilhadas (structural, not narrative)
+    sharedInstructions: {
+      format: "Response format: JSON_ONLY",
+      constraint: "text_outside_json: FORBIDDEN"
+    },
+
+    // Build individual step (structural control)
+    buildStep(config) {
+      const {
+        number,
+        title,
+        schema,
+        criticalNotes = [],
+        decisionRules = []
+      } = config;
+
+      let output = `## ${number}) ${title} — REQUIRED\n`;
+      output += `${this.sharedInstructions.format}\n\n`;
+      output += `\`\`\`json\n${schema}\n\`\`\`\n\n`;
+      output += `Constraints:\n`;
+      output += `- ${this.sharedInstructions.constraint}\n`;
+
+      if (criticalNotes.length > 0) {
+        output += criticalNotes.map(note => `- ${note}`).join('\n');
+        output += '\n';
+      }
+
+      if (decisionRules.length > 0) {
+        output += `\nDecision rules (ENFORCED):\n\`\`\`\n`;
+        output += decisionRules.join('\n');
+        output += '\n\`\`\`\n';
+      }
+
+      return output;
+    },
+
+    // Build complete template
+    buildTemplate(config) {
+      const {
+        mode,
+        customChecklist,
+        formato,
+        tamanho,
+        maxQuestions
+      } = config;
+
+      const step5 = this.buildStep({
+        number: 5,
+        title: mode === "FAST" ? "ANÁLISE" : "Análise Prévia",
+        schema: schemaFactory.render(schemaFactory.step5()),
+        criticalNotes: [
+          "must_validation[].codigo: MUST exist in CRITERIA_REGISTRY (section 2)",
+          "lacunas[].impede_must[]: MUST reference valid criterion codes",
+          "registry_validation.all_referenced_criteria_exist: IF false THEN HALT"
+        ]
+      });
+
+      const step6 = this.buildStep({
+        number: 6,
+        title: mode === "FAST" ? "PLANO" : "Plano de Execução",
+        schema: schemaFactory.render(schemaFactory.step6()),
+        criticalNotes: [
+          "ready_exec := AND(dependencies_check.step5_completed, dependencies_check.step5_registry_valid, dependencies_check.data_sufficient_for_plan, dependencies_check.all_musts_addressed, dependencies_check.no_blocks_detected)",
+          "steps[].addresses_criteria[]: MUST reference criteria from CRITERIA_REGISTRY"
+        ]
+      });
+
+      const step7 = this.buildStep({
+        number: 7,
+        title: mode === "FAST" ? "CHECKLIST" : "Auto-checagem",
+        schema: schemaFactory.render(schemaFactory.step7(customChecklist)),
+        criticalNotes: [
+          "honest_assessment: IF any(doubt) THEN false",
+          "failure_propagation.any_honest_assessment_false := EXISTS item WHERE honest_assessment==false",
+          "failure_propagation.any_checked_false := EXISTS item WHERE checked==false AND id IN [\"musts_cumpridos\", \"avoid_nao_violado\", \"uso_exclusivo_dados\"]",
+          "failure_propagation.force_block_step8 := OR(failure_propagation.any_honest_assessment_false, failure_propagation.any_checked_false)"
+        ]
+      });
+
+      const step8 = this.buildStep({
+        number: 8,
+        title: mode === "FAST" ? "PARADA" : "Regra de Parada",
+        schema: schemaFactory.render(schemaFactory.step8()),
+        decisionRules: [
+          "bloqueado := (",
+          "  NOT integrity_test.all_musts_really_met OR",
+          "  NOT integrity_test.used_only_authorized_data OR",
+          "  NOT validation_summary.step5_data_validation_passed OR",
+          "  NOT validation_summary.step5_registry_validation_passed OR",
+          "  NOT validation_summary.step6_ready_exec_true OR",
+          "  NOT validation_summary.step7_all_honest_true OR",
+          "  validation_summary.step7_force_block OR",
+          "  validation_summary.any_critical_issues OR",
+          "  (EXISTS source IN step7.data_sources_used WHERE source CONTAINS \"external\" AND policy == \"negado\")",
+          ")",
+          "",
+          "IF any(doubt) THEN bloqueado := true"
+        ]
+      });
+
+      const step9 = `## 9) ${mode === "FAST" ? "ENTREGA" : "Entrega Final"}
+
+Preconditions:
+- state == EXECUTION_PHASE
+- step8.bloqueado == false
+- step8.integrity_test.all(true)
+- step8.validation_summary.step5_registry_validation_passed == true
+- step8.validation_summary.step7_force_block == false
+- step8.validation_summary.any_critical_issues == false
+
+IF preconditions.all(true):
+  Generate deliverable:
+    format: ${formato}
+    size: ${tamanho}
+    source: <DATA> + contexto_implicito
+    compliance: ALL(M/S/A from CRITERIA_REGISTRY)
+    plan: EXACT_MATCH(step6.steps)
+
+ELSE:
+  OUTPUT: step8.explicacao_humana`;
+
+      return `${step5}\n---\n${step6}\n---\n${step7}\n---\n${step8}\n---\n${step9}`;
+    }
   };
 
   // =============================================
   // GERAÇÃO DE PROTOCOLO
   // =============================================
   const protocol = {
+    // Gerenciamento centralizado do estado do preview
+    loadTechnicalProtocol: (content, shouldScroll = true) => {
+      state.technicalProtocol = content;
+      state.previewMode = "technical";
+      form.preview.textContent = content;
+
+      // Mostrar toggle e marcar como técnico
+      if (elements.togglePreview.container) {
+        elements.togglePreview.container.classList.remove("hidden");
+      }
+      if (elements.togglePreview.input) {
+        elements.togglePreview.input.checked = true;
+      }
+
+      clipboard.updateState();
+
+      if (shouldScroll) {
+        navigation.scrollToElement("preview-title");
+      }
+    },
+
+    resetToHumanMode: () => {
+      state.technicalProtocol = "";
+      state.previewMode = "human";
+      form.preview.innerHTML = "";
+
+      // Esconder toggle
+      if (elements.togglePreview.container) {
+        elements.togglePreview.container.classList.add("hidden");
+      }
+      if (elements.togglePreview.input) {
+        elements.togglePreview.input.checked = false;
+      }
+
+      clipboard.updateState();
+    },
+
+    switchToMode: (mode) => {
+      if (mode === "technical" && state.technicalProtocol) {
+        state.previewMode = "technical";
+        form.preview.textContent = state.technicalProtocol;
+      } else {
+        state.previewMode = "human";
+        form.preview.innerHTML = protocol.generateHumanPreview();
+      }
+      clipboard.updateState();
+      navigation.scrollToElement("preview-title");
+    },
+
+    generateHumanPreview: () => {
+      const modo = form.modo()?.value || "FAST";
+      const idioma = form.idiomaHidden.value || "pt";
+      const countCriterios = form.criteriosTable.querySelectorAll("tr").length;
+
+      // Helper para truncar texto
+      const truncate = (text, maxLength) => {
+        const trimmed = text.trim();
+        return trimmed.length > maxLength ? trimmed.substring(0, maxLength) + "..." : trimmed;
+      };
+
+      // Helper para adicionar seção com ícone
+      const addSection = (icon, title) => `<i class="${icon}"></i> ${title}\n`;
+
+      let preview = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      preview += addSection("fas fa-clipboard-list", "RESUMO DO SEU PROMPT");
+      preview += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+      // Configurações
+      preview += addSection("fas fa-cog", "CONFIGURAÇÕES");
+      preview += `   Modo: ${modo === "FAST" ? '<i class="fas fa-bolt"></i> Rápido' : '<i class="fas fa-search"></i> Detalhado'}\n`;
+      preview += `   Idioma: ${idioma.toUpperCase()}\n`;
+      preview += `   Público: ${form.publico.value || "técnico"}\n`;
+      preview += `   Contexto: ${form.contexto.value || "primeira_vez"}\n\n`;
+
+      // Tarefa
+      const objetivoOQue = form.objetivo_o_que.value.trim();
+      if (objetivoOQue) {
+        preview += addSection("fas fa-bullseye", "SUA TAREFA");
+        preview += `   ${objetivoOQue}\n\n`;
+
+        const objetivoPorQue = form.objetivo_por_que.value.trim();
+        if (objetivoPorQue) {
+          preview += `   <i class="fas fa-lightbulb"></i> Por quê: ${objetivoPorQue}\n`;
+        }
+
+        const objetivoCriterio = form.objetivo_criterio.value.trim();
+        if (objetivoCriterio) {
+          preview += `   <i class="fas fa-check"></i> Critério de sucesso: ${objetivoCriterio}\n`;
+        }
+        preview += `\n`;
+      }
+
+      // Formato
+      const formato = form.formato.value.trim();
+      const tamanho = form.tamanho.value.trim();
+      if (formato || tamanho) {
+        preview += addSection("fas fa-ruler-combined", "FORMATO DA RESPOSTA");
+        if (formato) preview += `   Tipo: ${formato}\n`;
+        if (tamanho) preview += `   Tamanho: ${tamanho}\n`;
+        preview += `\n`;
+      }
+
+      // Prioridades
+      if (countCriterios > 0) {
+        preview += addSection("fas fa-star", `PRIORIDADES (${countCriterios} critério${countCriterios > 1 ? "s" : ""})`);
+        Array.from(form.criteriosTable.querySelectorAll("tr")).forEach((row) => {
+          const codigo = row.cells[0].textContent;
+          const peso = row.cells[1].textContent;
+          const descricao = row.cells[2].textContent;
+          const icones = {
+            M: '<i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>',
+            S: '<i class="fas fa-check-circle" style="color: #f39c12;"></i>',
+            A: '<i class="fas fa-ban" style="color: #95a5a6;"></i>',
+            D: '<i class="fas fa-database"></i>'
+          };
+          preview += `   ${icones[codigo] || icones.D} ${descricao} (peso: ${peso})\n`;
+        });
+        preview += `\n`;
+      }
+
+      // Dados
+      const dados = form.dados.value.trim();
+      if (dados) {
+        preview += addSection("fas fa-book", "DADOS FORNECIDOS");
+        preview += `   ${truncate(dados, 200)}\n\n`;
+      }
+
+      // Contexto implícito
+      const contexto = form.contexto_implicito.value.trim();
+      if (contexto) {
+        preview += addSection("fas fa-brain", "CONTEXTO ADICIONAL");
+        preview += `   ${truncate(contexto, 150)}\n\n`;
+      }
+
+      // Restrições
+      const scopeLimits = form.scopeLimits.value.trim();
+      const toolsRequired = form.toolsRequired.value.trim();
+      const otherConditions = form.otherConditions.value.trim();
+
+      if (scopeLimits || toolsRequired || otherConditions) {
+        preview += addSection("fas fa-exclamation-triangle", "RESTRIÇÕES");
+        if (scopeLimits) {
+          utils.splitLines(form.scopeLimits.value).forEach(limite => {
+            preview += `   • ${limite}\n`;
+          });
+        }
+        if (toolsRequired) {
+          utils.splitLines(form.toolsRequired.value).forEach(tool => {
+            preview += `   <i class="fas fa-wrench"></i> ${tool}\n`;
+          });
+        }
+        if (otherConditions) {
+          utils.splitLines(form.otherConditions.value).forEach(cond => {
+            preview += `   <i class="fas fa-info-circle"></i> ${cond}\n`;
+          });
+        }
+        preview += `\n`;
+      }
+
+      preview += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      preview += `<i class="fas fa-lightbulb"></i> Clique em "Gerar Prompt" para criar o protocolo completo\n`;
+
+      return preview;
+    },
+
+    updateRealtimePreview: utils.debounce(() => {
+      // Só atualizar se não houver protocolo técnico gerado ou se estiver em modo humano
+      if (!state.technicalProtocol || state.previewMode === "human") {
+        form.preview.innerHTML = protocol.generateHumanPreview();
+      }
+      clipboard.updateState();
+    }, CONFIG.REALTIME_PREVIEW_DEBOUNCE),
+
     buildSummary: () => {
       const countCriterios = form.criteriosTable.querySelectorAll("tr").length;
       const criteriosText = countCriterios === 1 ? "1 adicionado" : `${countCriterios} adicionados`;
@@ -770,10 +1636,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     generate: () => {
       const modo = form.modo().value;
-      const criterios = Array.from(form.criteriosTable.querySelectorAll("tr")).map((row) => {
-        const [codigo, peso, descricao] = [row.cells[0].textContent, row.cells[1].textContent, row.cells[2].textContent];
-        return `${codigo}: ${descricao} # peso = ${peso}`;
-      });
+
+      // NOVO: Critérios como objetos (para buildPriorities)
+      const criterios = Array.from(form.criteriosTable.querySelectorAll("tr")).map((row) => ({
+        codigo: row.cells[0].textContent,
+        peso: row.cells[1].textContent,
+        descricao: row.cells[2].textContent
+      }));
 
       const scopeLimits = utils.splitLines(form.scopeLimits.value);
       const toolsRequired = utils.splitLines(form.toolsRequired.value);
@@ -786,126 +1655,22 @@ Por quê: ${form.objetivo_por_que.value || "Não especificado"}
 Critério de sucesso: ${form.objetivo_criterio.value || "Não especificado"}
 `.trim();
 
-      const templates = {
-        FAST: `## 5) ANÁLISE — ETAPA OBRIGATÓRIA
-IA — Apresente em formato de tabela:
+      // NOVO: Usar buildPriorities (Layer Zero - refs)
+      const prioritiesSection = buildPriorities(criterios);
 
-| Categoria  | Itens Identificados |
-|------------|---------------------|
-| Lacunas    | [liste o que falta e pode impedir entrega] |
-| Assunções  | [liste decisões que tomará por conta própria] |
-| Riscos     | [liste pontos que podem gerar erro ou ambiguidade] |
+      // NOVO: Gerar guards YAML (Layer Zero - enforcement)
+      const guardBlock = renderGuardYAML(guardConfig);
 
-**Se houver lacuna crítica que impeça um MUST:**
-- Faça até ${form.maxQuestions.value} perguntas objetivas e pare
-- Se não houver resposta, declare as assunções e prossiga
+      // NOVO: Usar templateBuilder para gerar Steps 5-9 (Layer Zero - JSON schemas)
+      const stepsTemplate = templateBuilder.buildTemplate({
+        mode: modo,
+        customChecklist: customChecklist,
+        formato: form.formato.value,
+        tamanho: form.tamanho.value,
+        maxQuestions: form.maxQuestions.value
+      });
 
----
-## 6) PLANO — ETAPA OBRIGATÓRIA
-IA — Tabela estruturada (1 linha por passo):
-
-| # | Ação | Entregável | Como atende M/S/A |
-|---|------|------------|-------------------|
-| 1 | [ação] | [meta] | [justificativa] |
-| 2 | [ação] | [meta] | [justificativa] |
-
-**Tamanho estimado:** [estimativa]
-**Marca de conclusão:** <<READY_EXEC>>
-
----
-## 7) CHECKLIST — ETAPA OBRIGATÓRIA
-IA — Marque e explique brevemente cada item:
-
-- [ ] Etapas 5-6 concluídas antes da entrega
-- [ ] Todos os MUST cumpridos
-- [ ] SHOULD atendidos quando possível
-- [ ] Nenhum AVOID violado
-- [ ] Tamanho e formato conforme Tarefa
-- [ ] Uso exclusivo dos Dados fornecidos
-- [ ] Incertezas qualificadas
-${customChecklist.map((cc) => `- [ ] ${cc}`).join("\n")}
-
----
-## 8) PARADA — ETAPA OBRIGATÓRIA
-IA — Formato compacto:
-
-**Bloqueado?** [true/false]
-**Motivo:** [se bloqueado, explique; senão: "N/A"]
-**Proposta:** [se bloqueado: perguntas/dados adicionais; senão: "Prosseguir"]
-
-**IMPORTANTE:** Não gere entrega especulativa se bloqueado.
-
----
-## 9) ENTREGA — ETAPA OBRIGATÓRIA
-IA — Somente após <<READY_EXEC>>:
-- Formato: conforme definido na Tarefa
-- Fonte: exclusivamente <DATA>
-- Conformidade: todos os critérios e restrições acima`,
-        THOROUGH: `## 5) Análise Prévia (não é a entrega) — ETAPA OBRIGATÓRIA
-IA — faça:
-- Com base nos itens 1–4, identifique pontos críticos antes de produzir qualquer conteúdo.
-- Apresente sua análise separando claramente os seguintes blocos:
-  - **Lacunas** → o que está faltando e pode impedir a entrega correta
-  - **Assunções** → decisões que você (IA) vai tomar por conta própria, se não houver resposta
-  - **Riscos** → pontos que podem gerar erro, ambiguidade ou violar alguma regra
-- Use formato escaneável e organizado — como listas com títulos — para facilitar a leitura humana.
-
-Se houver lacuna crítica que impeça um MUST:
-- Faça perguntas objetivas, a quantidade de perguntas foi definida em "clarification_policy: max_questions: ${form.maxQuestions.value}" e pare.
-- Se não houver resposta, declare as assunções necessárias e siga com a tarefa.
-
----
-## 6) Plano de Execução (antes de escrever) — ETAPA OBRIGATÓRIA
-IA — faça:
-- Apresente um plano estruturado com 1 linha por passo, em formato de tabela com 3 colunas:
-
-| passo | acao | meta |
-|-------|------|------|
-| 1 | Introdução | contextualizar público |
-| 2 | ... | ... |
-
-- Explique como atenderá MUSTs, SHOULDs e evitará AVOIDs.
-- Estime o tamanho final.
-
-Finalize com a marca:
-<<READY_EXEC>>
-
----
-## 7) Auto-checagem (antes de enviar) — ETAPA OBRIGATÓRIA
-IA — faça (marque a lista em Markdown e explique brevemente e com verdade cada item ticado ou não):
-
-- [ ] Etapas 5 a 6 concluídas integralmente antes da entrega
-- [ ] Cumpriu todos os MUST
-- [ ] SHOULD atendidos quando possível
-- [ ] Nenhum AVOID violado
-- [ ] Tamanho e formato conforme Tarefa
-- [ ] Uso exclusivo dos Dados
-- [ ] Incertezas qualificadas
-${customChecklist.map((cc) => `- [ ] ${cc}`).join("\n")}
-- [ ] Etapa 7 concluída sem pular itens
-
----
-## 8) Regra de Parada — ETAPA OBRIGATÓRIA
-IA — faça:
-- Apresente sua análise separando claramente os seguintes blocos:
-  - **Bloqueado** → true (se bloqueado) ou false (não é necessário realizar essa etapa)
-  - **Motivo** → Explicação objetiva do motivo do bloqueio
-  - **Proposta** → solicitação de dados adicionais, perguntas ou sugestão de versão parcial segura
-- Use formato escaneável e organizado — como listas com títulos — para facilitar a leitura humana.
-
-**IMPORTANTE:** Não gere uma entrega especulativa se bloqueado.
-
----
-## 9) Entrega (somente após <<READY_EXEC>>) — ETAPA OBRIGATÓRIA
-IA — faça:
-### Respeitar o esquema indicado anteriormente.
-- Produza a saída conforme:
-  - O formato definido na Tarefa
-  - Os dados delimitados em <DATA>
-  - Os critérios e restrições definidos antes`,
-      };
-
-      const output = `<!-- OPENPUP v2 -->
+      const output = `<!-- OPENPUP v2.1 Layer Zero -->
 ## 0) META
 modo: ${modo}
 idioma: ${form.idiomaHidden.value}
@@ -923,12 +1688,7 @@ Tamanho-alvo: ${form.tamanho.value}
 </TASK>
 
 ---
-## 2) PRIORIDADES
-**Legenda:** M=MUST | S=SHOULD | A=AVOID | D=DATA
-
-M: A IA deve cumprir todas as etapas do protocolo, com execução obrigatória das seções 5 a 9. Falhas nessas etapas devem acionar bloqueio na etapa 8. # peso = 1.0
-M: A IA deve interromper o fluxo se qualquer etapa anterior estiver incompleta, inválida ou não validada. Não é permitido pular etapas. # peso = 1.0
-${criterios.join("\n")}
+${prioritiesSection}
 
 ---
 ## 3) DADOS
@@ -936,14 +1696,15 @@ ${criterios.join("\n")}
 ${form.dados.value}
 </DATA>
 
-${form.contexto_implicito.value ? `---
-## 3.5) CONTEXTO IMPLÍCITO
-${form.contexto_implicito.value}
-` : ''}---
+${form.contexto_implicito.value || ''}
+
+---
 ## 4) RESTRIÇÕES
 external_sources: ${form.externalSources.value}
-clarification_policy: max_questions: ${form.maxQuestions.value}
-if_no_response: ${form.ifNoResponse.value}
+
+clarification_policy:
+  max_questions: ${form.maxQuestions.value}
+  if_no_response: ${form.ifNoResponse.value}
 
 scope_limits:
 ${scopeLimits.length > 0 ? scopeLimits.map((sl) => `  - ${sl}`).join("\n") : "  - Não definido"}
@@ -955,11 +1716,14 @@ other_conditions:
 ${otherConditions.length > 0 ? otherConditions.map((oc) => `  - ${oc}`).join("\n") : "  - Não definido"}
 
 ---
-${templates[modo]}
+${guardBlock}
 
-<!-- /OPENPUP -->`;
+---
+${stepsTemplate}
 
-      form.preview.textContent = output;
+<!-- /OPENPUP v2.1 -->`;
+
+      protocol.loadTechnicalProtocol(output);
       history.save(output);
       document.dispatchEvent(new Event("protocolGenerated"));
     },
@@ -970,8 +1734,9 @@ ${templates[modo]}
   // =============================================
   const clipboard = {
     updateState: () => {
-      const content = form.preview.textContent.trim();
-      if (elements.copy.btn) elements.copy.btn.disabled = content.length === 0;
+      // Habilitar botão APENAS se houver protocolo técnico gerado
+      const hasProtocol = state.technicalProtocol && state.technicalProtocol.trim().length > 0;
+      if (elements.copy.btn) elements.copy.btn.disabled = !hasProtocol;
     },
 
     copy: async (text) => {
@@ -1068,7 +1833,9 @@ ${templates[modo]}
     form.ifNoResponse.value = "assume";
     form.customChecklist.value = "";
     form.criteriosTable.innerHTML = "";
-    form.preview.textContent = "";
+
+    // Resetar estado do preview
+    protocol.resetToHumanMode();
   };
 
   // =============================================
@@ -1139,27 +1906,87 @@ ${templates[modo]}
     });
   }
 
-  // Header shrink
-  window.addEventListener("scroll", () => {
-    elements.header?.classList.toggle("shrink", window.scrollY > CONFIG.SCROLL_OFFSET);
-  }, { passive: true });
+  // Listener unificado para mudanças do header durante scroll
+  const handleHeaderUpdates = () => {
+    // Ignorar se página não está pronta ou durante scroll programático
+    if (!state.isPageReady || state.isProgrammaticScroll) return;
 
-  // Barra de progresso no header
-  const handleHeaderProgress = () => {
-    if (!elements.progress.original || !elements.progress.header.wrapper) return;
+    // Usar RAF para batching (leituras e escritas separadas)
+    requestAnimationFrame(() => {
+      if (state.isProgrammaticScroll) return; // Verificar novamente após RAF
 
-    const rect = elements.progress.original.getBoundingClientRect();
-    const isHidden = rect.top < (elements.header?.offsetHeight || 0);
+      // Fase de LEITURA (não causa reflow pois não muda DOM)
+      const scrollY = window.scrollY;
+      const shouldShrink = scrollY > CONFIG.SCROLL_OFFSET;
 
-    if (isHidden !== state.isHeaderProgressVisible) {
-      state.isHeaderProgressVisible = isHidden;
-      elements.header?.classList.toggle('with-progress-bar', isHidden);
-      elements.progress.header.wrapper.classList.toggle('visible', isHidden);
-    }
+      let isProgressHidden = false;
+      if (elements.progress.original) {
+        const rect = elements.progress.original.getBoundingClientRect();
+        isProgressHidden = rect.top < cachedHeaderHeight;
+      }
+
+      // Fase de ESCRITA (todas as mudanças de DOM juntas)
+      elements.header?.classList.toggle("shrink", shouldShrink);
+
+      if (elements.progress.header.wrapper && isProgressHidden !== state.isHeaderProgressVisible) {
+        state.isHeaderProgressVisible = isProgressHidden;
+        elements.header?.classList.toggle('with-progress-bar', isProgressHidden);
+        elements.progress.header.wrapper.classList.toggle('visible', isProgressHidden);
+      }
+    });
   };
 
-  window.addEventListener("scroll", handleHeaderProgress, { passive: true });
-  window.addEventListener("resize", handleHeaderProgress);
+  // Atualizar cache de altura no resize
+  const updateHeaderHeightCache = () => {
+    if (elements.header) {
+      cachedHeaderHeight = elements.header.offsetHeight;
+    }
+    handleHeaderUpdates();
+  };
+
+  window.addEventListener("scroll", handleHeaderUpdates, { passive: true });
+  window.addEventListener("resize", updateHeaderHeightCache);
+
+  // Inicializar header no estado correto quando página carregar
+  const initializeHeader = () => {
+    if (!elements.header) return;
+
+    // Cachear altura do header
+    cachedHeaderHeight = elements.header.offsetHeight;
+
+    // Adicionar no-transition temporariamente
+    elements.header.classList.add("no-transition");
+
+    // Definir estado inicial (LEITURA)
+    const scrollY = window.scrollY;
+    const shouldShrink = scrollY > CONFIG.SCROLL_OFFSET;
+
+    let isProgressHidden = false;
+    if (elements.progress.original) {
+      const rect = elements.progress.original.getBoundingClientRect();
+      isProgressHidden = rect.top < cachedHeaderHeight;
+    }
+
+    // Aplicar estado inicial (ESCRITA)
+    elements.header.classList.toggle("shrink", shouldShrink);
+
+    if (elements.progress.header.wrapper) {
+      state.isHeaderProgressVisible = isProgressHidden;
+      elements.header.classList.toggle('with-progress-bar', isProgressHidden);
+      elements.progress.header.wrapper.classList.toggle('visible', isProgressHidden);
+    }
+
+    // Remover no-transition e marcar como pronto
+    requestAnimationFrame(() => {
+      if (elements.header) {
+        elements.header.classList.remove("no-transition");
+      }
+      state.isPageReady = true;
+    });
+  };
+
+  // Executar inicialização
+  requestAnimationFrame(initializeHeader);
 
   // Modal de confirmação
   if (elements.modal.confirm) {
@@ -1226,6 +2053,60 @@ ${templates[modo]}
   form.criteriosTable.addEventListener("DOMSubtreeModified", validation.updateIndicator);
   validation.updateIndicator();
 
+  // =============================================
+  // PREVIEW EM TEMPO REAL
+  // =============================================
+  const allFormFields = [
+    form.objetivo_o_que,
+    form.objetivo_por_que,
+    form.objetivo_criterio,
+    form.dados,
+    form.contexto_implicito,
+    form.formato,
+    form.tamanho,
+    form.publico,
+    form.overflow,
+    form.contexto,
+    form.externalSources,
+    form.maxQuestions,
+    form.ifNoResponse,
+    form.scopeLimits,
+    form.toolsRequired,
+    form.otherConditions,
+    form.customChecklist,
+  ];
+
+  // Adicionar listeners para campos de texto
+  allFormFields.forEach(field => {
+    if (field) {
+      field.addEventListener("input", protocol.updateRealtimePreview);
+      field.addEventListener("change", protocol.updateRealtimePreview);
+    }
+  });
+
+  // Listener para radio buttons de modo
+  document.querySelectorAll('input[name="modo"]').forEach(radio => {
+    radio.addEventListener("change", protocol.updateRealtimePreview);
+  });
+
+  // Listener para mudanças na tabela de critérios
+  form.criteriosTable.addEventListener("DOMSubtreeModified", protocol.updateRealtimePreview);
+
+  // Listener para mudanças no idioma
+  elements.idioma.input.addEventListener("input", protocol.updateRealtimePreview);
+
+  // Inicializar preview humanizado
+  protocol.updateRealtimePreview();
+
+  // =============================================
+  // TOGGLE PREVIEW MODE
+  // =============================================
+  if (elements.togglePreview.input) {
+    elements.togglePreview.input.addEventListener("change", (e) => {
+      protocol.switchToMode(e.target.checked ? "technical" : "human");
+    });
+  }
+
   // Histórico
   elements.history.clearBtn?.addEventListener("click", history.clear);
   elements.history.fab?.addEventListener("click", history.openSidebar);
@@ -1269,15 +2150,39 @@ ${templates[modo]}
     document.addEventListener("protocolGenerated", clipboard.updateState);
 
     elements.copy.btn.addEventListener("click", async () => {
-      const text = form.preview.textContent;
-      if (!text) return;
+      // Sempre copiar o protocolo técnico quando disponível
+      const textToCopy = state.technicalProtocol || form.preview.textContent;
 
-      const ok = await clipboard.copy(text);
-      clipboard.showFeedback(
-        ok ? "Prompt copiado com sucesso!" : "Erro ao copiar! Verifique console ou contexto (HTTPS/localhost).",
-        ok
-      );
+      if (!textToCopy || !textToCopy.trim()) {
+        clipboard.showFeedback("Não há conteúdo para copiar", false);
+        return;
+      }
+
+      const ok = await clipboard.copy(textToCopy);
+
+      if (ok) {
+        clipboard.showFeedback("Prompt copiado com sucesso!", true);
+
+        // Se estiver no modo humanizado e tiver protocolo técnico, mostrar modal explicativo
+        if (state.previewMode === "human" && state.technicalProtocol && elements.modal.copyInfo) {
+          setTimeout(() => {
+            utils.setModalState(elements.modal.copyInfo, true);
+            accessibility.trapFocus(elements.modal.copyInfo);
+            (elements.modal.copyInfo.querySelector("h2") || elements.modal.copyInfo.querySelector(".modal-title"))?.focus();
+          }, 300);
+        }
+      } else {
+        clipboard.showFeedback("Erro ao copiar! Verifique console ou contexto (HTTPS/localhost).", false);
+      }
     });
+  }
+
+  // Modal de info de cópia
+  if (elements.modal.copyInfo) {
+    const closeCopyInfo = () => utils.setModalState(elements.modal.copyInfo, false);
+
+    document.getElementById("copy-info-ok")?.addEventListener("click", closeCopyInfo);
+    modals.addCloseListeners(elements.modal.copyInfo, closeCopyInfo);
   }
 
   // Navegação global por teclado

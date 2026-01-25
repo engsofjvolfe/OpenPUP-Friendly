@@ -8,6 +8,225 @@ Todas as mudanças significativas neste projeto serão documentadas neste arquiv
 
 _Nenhuma mudança pendente no momento. Consulte [TODO.md](TODO.md) para roadmap de funcionalidades planejadas._
 
+## [2.2.0] – 2026-02-01
+
+### Adicionado
+
+**Layer Zero: Enforcement Estrutural** - Sistema de controle baseado em estruturas máquina-legíveis (YAML Guards + JSON Schemas) que substitui instruções narrativas por contratos executáveis.
+
+#### Validação UI (web/script.js)
+
+**Módulo validationRules** (linhas 121-217):
+- `isEmpty()`: verifica campos vazios
+- `isPlaceholder()`: detecta 7 padrões de placeholder (quaisquer dados, any data, cualquier dato, dados necessários, insert data, cole aqui, paste here)
+- `dataPolicyConflict()`: valida que external_sources='negado' requer DATA não-vazio e não-placeholder
+- `criteriaConflicts()`: detecta 3 tipos de conflito entre M-criteria:
+  - Tamanho (máximo menor que mínimo palavras)
+  - Tom (conciso vs detalhado)
+  - Público (técnico vs leigo)
+
+**Prevalidação antes de gerar protocolo** (linhas 528-542):
+- Bloqueia geração se DATA_POLICY_CONFLICT detectado
+- Exibe warnings para conflitos de critérios
+- Mensagens explicativas com passos para resolver
+
+#### Guard Configuration (web/script.js)
+
+**guardConfig object** (linhas 1000-1450):
+- Version: "2.1.0"
+- **4 invariantes com violation schemas:**
+  - INV_001_DATA_POLICY: valida disponibilidade de dados vs external_sources
+  - INV_002_MUST_FEASIBILITY: verifica satisfazibilidade de M-criteria
+  - INV_003_NO_CONFLICTS: detecta critérios mutuamente exclusivos
+  - **INV_004_REGISTRY_INTEGRITY (NOVO)**: valida referências cruzadas ao CRITERIA_REGISTRY
+- **State machine com 4 estados:**
+  - PREVALIDATION: checks INV_001-003 → VALIDATION_PHASE | BLOCKED
+  - VALIDATION_PHASE: steps 5-8 JSON only → EXECUTION_PHASE | BLOCKED
+  - EXECUTION_PHASE: step 9 natural language
+  - BLOCKED: diagnostic only, step 9 suprimido
+
+**renderGuardYAML()**: gera YAML compacto a partir de guardConfig
+
+#### Schema Factory (web/script.js)
+
+**schemaFactory object** (linhas 1450-1620):
+- `base()`: campos _meta comuns (version, format, text_outside_json_forbidden)
+- `step5()`: schema com **registry_validation** + **resource_check**
+- `step6()`: schema com **step5_registry_valid** em dependencies_check
+- `step7()`: schema com **failure_propagation** + **data_sources_used**
+- `step8()`: schema com **step5_registry_validation_passed** + **step7_force_block** + decision algorithm
+- `render()`: formata JSON com tipos preservados
+
+**Novos campos JSON:**
+
+Step 5 (Análise):
+- `registry_validation.all_referenced_criteria_exist`: boolean
+- `registry_validation.invalid_references`: [string]
+- `must_validation[].resource_check.required/available/missing`: [string]
+
+Step 6 (Plano):
+- `dependencies_check.step5_registry_valid`: boolean
+- `steps[].addresses_criteria`: [string] (lista códigos de critérios atendidos)
+
+Step 7 (Checklist):
+- `items[].data_sources_used`: ["<DATA>"] | ["external_search"] | etc
+- `failure_propagation.any_honest_assessment_false`: boolean
+- `failure_propagation.any_checked_false`: boolean
+- `failure_propagation.force_block_step8`: boolean
+
+Step 8 (Stop Decision):
+- `validation_summary.step5_registry_validation_passed`: boolean
+- `validation_summary.step7_force_block`: boolean
+- Decision algorithm formalizado: `bloqueado := (NOT integrity_test.all_musts_really_met OR ... IF any(doubt) THEN bloqueado := true)`
+
+#### Protocol Generation (web/script.js)
+
+**buildPriorities()** (linhas 1000-1050):
+- Gera Section 2 CRITERIA_REGISTRY
+- Meta-Constraints como referências `[[M-PROTO-1]]`, `[[M-PROTO-2]]`
+- REGISTRY_RULE explícito
+
+**protocol.generate() modificado** (linhas 1640-1730):
+- Linha 1662: usa buildPriorities() para Section 2
+- Linha 1681: contexto_implicito inline (não seção separada)
+- Linhas 1687-1689: clarification_policy com YAML nested correto
+- Linha 1226: remove hardcoded `data_sources_used: ["<DATA>"]` de extraFields
+- Injeta Guards YAML antes Steps 5-9
+
+#### Documentação Completa
+
+**DOCS/template-prompt-v2.2-clean.md** (+313 linhas, NOVO):
+- Template canônico com todos os 25 placeholders
+- Princípio Layer Zero: "Control is structural, not narrative"
+- Sections 0-4: META, TAREFA, CRITERIA_REGISTRY, DADOS, RESTRIÇÕES
+- Guards YAML completo (INV_001-004 + state machine)
+- JSON schemas completos para Steps 5-8
+- Decision algorithm formalizado em Step 8
+- Step 9 condicional (só se step8.bloqueado == false)
+
+**DOCS/guards-specification.md** (+914 linhas, NOVO):
+- Especificação completa dos 4 invariantes com violation schemas
+- State machine documentado (4 estados + transições)
+- AI Processing Instructions (6 passos)
+- Exemplos de violations (Empty DATA + negado, Conflicting MUSTs)
+- TypeScript interfaces para GuardConfig, Step5-8 schemas
+- Versioning: semantic versioning explicado
+
+**DOCS/layer-zero-principle.md** (+362 linhas, NOVO):
+- Princípio fundamental: "Control is structural, not narrative. Human-readable text only at I/O boundaries"
+- Motivação: LLMs otimizam para "parecer correto" > "ser correto"
+- Evidências de falha: 4 sistemas testados (GPT, DeepSeek x2, Le Chat) falharam similarmente
+- Solução Layer Zero em 4 camadas: UI Prevalidation → Guards YAML → JSON Schemas → Conditional Delivery
+- Por que funciona: máquina-legível > linguagem natural, estado explícito > fluxo implícito, campos nomeados > prosa, redundância como defesa
+- Resultados projetados: -90% data policy violations, -70% checklist dissociation, -75% stopping bias, +1100% taxa bloqueio apropriado
+
+**DOCS/migration-v2.1-to-v2.2.md** (+554 linhas, NOVO):
+- Breaking changes documentados: Steps 5-8 JSON, Section 2 rename, Guards YAML
+- Exemplos antes/depois (v2.0 tabelas → v2.1 JSON)
+- Como migrar: 4 passos
+- Benefícios: enforcement real, auditabilidade, ~90% redução violations
+- Novos campos JSON explicados com exemplos
+- Guards YAML: o que são, como funcionam, por que funcionam
+- FAQ: 8 perguntas comuns respondidas
+
+**DOCS/IMPLEMENTATION_LOG.md** (+328 linhas, NOVO):
+- Log detalhado: 2026-01-27 a 2026-02-01
+- Contexto: problema v2.0/2.1 (instruções narrativas ignoradas)
+- Decisões arquiteturais: 5 decisões fundamentais
+- Implementação: 4 fases (UI validation → Guards+Schemas → Template builder → Documentation)
+- Bugs corrigidos: 3 bugs (contexto_implicito, clarification_policy, data_sources_used)
+- Trade-offs: +320 tokens overhead, ~2900 tokens savings, ROI 9x positivo
+
+**.github/RELEASE_v2.2.0.md** (+116 linhas, NOVO):
+- Release notes completas
+- Visão geral Layer Zero
+- O que inclui: CRITERIA_REGISTRY, INV_004, Schemas aprimorados, Guards YAML, Documentação
+- Breaking changes documentados
+- Princípio Layer Zero explicado
+- Instalação: instruções para branch layer/layer-zero
+
+#### Atualizações de Especificação
+
+**WebView 1 - etapas.md** (+43 linhas):
+- Linha 137: "Etapa 2 — Prioridades" → "Etapa 2 — CRITERIA_REGISTRY"
+- Linhas 140-141: M1/M2 → `[[M-PROTO-1]]`, `[[M-PROTO-2]]` (texto simplificado, formato padronizado)
+- Linha 149: REGISTRY_RULE explícito adicionado
+- Linhas 281-291, 385-396: exemplos de protocolo gerado atualizados com Section 2 CRITERIA_REGISTRY
+
+**TODO.md** (+252 linhas):
+- **Seção Protocolo OpenPUP v2.2 - Hardening & Elasticidade Controlada** (linhas 138-266):
+  - 6 melhorias estruturais planejadas: checklist condicional, MUSTs por criticidade (M-CORE/M-SUPPORT), refinar INV_003, degradação controlada, Policy Resolver explícito, Protocol Lint
+- **Seção Auditoria Ética e Coleta de Dados** (linhas 268-350):
+  - 9 itens de privacidade/consentimento
+  - Princípio: "Coletar o mínimo necessário, com máxima clareza, pelo menor tempo possível"
+
+### Corrigido
+
+**Bugs de conformidade ao template:**
+- contexto_implicito: não cria mais seção separada (3.5), agora é inline após `</DATA>` (web/script.js linha 1681)
+- clarification_policy: corrigido YAML nested (não mais inline inválido) (web/script.js linhas 1687-1689)
+- data_sources_used: removido hardcoded `["<DATA>"]`, agora campo dinâmico que AI preenche com fontes reais (web/script.js linha 1226)
+
+### Alterado
+
+**Breaking Changes:**
+- ⚠️ Seção 2: PRIORIDADES → CRITERIA_REGISTRY
+- ⚠️ Meta-constraints: M1/M2 → `[[M-PROTO-1]]`, `[[M-PROTO-2]]`
+- ⚠️ Schemas JSON com novos campos obrigatórios (registry_validation, failure_propagation, data_sources_used, etc.)
+- ⚠️ Guards YAML com sintaxe `violation_if` (substitui `rule + action`)
+- ⚠️ Steps 5-8 agora retornam JSON strict (não mais tabelas/prosa)
+
+**Migração:** Ver [DOCS/migration-v2.1-to-v2.2.md](DOCS/migration-v2.1-to-v2.2.md)
+
+### Removido
+
+- **DOCS/merge-divergence.md** (-54 linhas): documento obsoleto após resolução de merge divergence
+
+## [2.1.0] – 2026-01-25
+
+### Adicionado
+
+#### Pré-visualização em Tempo Real
+
+**Preview Humanizado:**
+
+- **Visualização humanizada do protocolo** com ícones Font Awesome para melhor legibilidade
+  - Substituição de emojis por ícones profissionais (fas fa-clipboard-list, fas fa-cog, fas fa-bullseye, etc.)
+  - Seções organizadas visualmente: Configurações, Tarefa, Formato, Prioridades, Dados, Contexto, Restrições
+  - Truncamento automático de textos longos para preview conciso
+  - Contadores de critérios e informações contextuais
+- **Atualização automática em tempo real** conforme usuário preenche campos
+  - Debounce de 500ms para otimizar performance
+  - Listeners em todos os campos do formulário (input, change, DOMSubtreeModified)
+  - Preview atualiza sem necessidade de clicar "Gerar Prompt"
+- **Toggle de visualização** (Material Design) para alternar entre modos:
+  - Modo Humanizado: visualização amigável com ícones e formatação
+  - Modo Técnico: protocolo completo com tags (TASK, DATA, etc.)
+  - Switch animado com estados visuais claros
+  - Ícones descritivos (fas fa-user, fas fa-code)
+  - Aparece automaticamente após gerar protocolo
+- **Modal informativo sobre cópia**:
+  - Explica que o protocolo técnico é sempre copiado (não o humanizado)
+  - Orientação sobre uso do toggle
+  - Aparece quando usuário copia em modo humanizado
+
+**Gerenciamento de Estado:**
+
+- **Centralização do estado do preview** com funções DRY:
+  - `loadTechnicalProtocol()`: carrega protocolo e atualiza UI
+  - `resetToHumanMode()`: reseta para modo inicial
+  - `switchToMode()`: alterna entre modos com scroll automático
+- **State tracking**:
+  - `state.previewMode`: "human" ou "technical"
+  - `state.technicalProtocol`: armazena protocolo gerado
+- **Integração com histórico**: ao carregar prompt do histórico, toggle aparece automaticamente
+
+**Recursos Visuais:**
+
+- **Font Awesome 6.5.1 CDN** integrado para biblioteca de ícones
+- **Estilos do toggle** com transições suaves e estados hover/focus
+- **CSS otimizado** para componentes de preview (cores, espaçamento, responsividade)
+
 ## [2.0.0] – 2026-01-17
 
 > **VERSÃO ESTÁVEL - RECOMENDADA**
