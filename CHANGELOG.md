@@ -10,6 +10,9 @@ _Nenhuma mudança pendente no momento. Consulte [TODO.md](TODO.md) para roadmap 
 
 ## [2.2.0] – 2026-02-01
 
+> **Nota sobre versionamento:**
+> Este release (v2.2.0) e o anterior (v2.1.0) foram consolidados no mesmo commit ([0e688bc](https://github.com/engsofjvolfe/OpenPUP-Friendly/commit/0e688bc)), porém a mensagem do commit menciona apenas "v2.1.0". Isso ocorreu por erro no processo de versionamento - ambas as features foram desenvolvidas em sequência e mescladas juntas. A tag `v2.2.0` aponta corretamente para este commit consolidado, enquanto a tag `v2.1.0` aponta para um commit anterior ([7a82806](https://github.com/engsofjvolfe/OpenPUP-Friendly/commit/7a82806)) que continha apenas as features de preview. Os releases foram criados manualmente no GitHub para refletir a realidade das funcionalidades implementadas.
+
 ### Adicionado
 
 **Layer Zero: Enforcement Estrutural** - Sistema de controle baseado em estruturas máquina-legíveis (YAML Guards + JSON Schemas) que substitui instruções narrativas por contratos executáveis.
@@ -183,6 +186,9 @@ Step 8 (Stop Decision):
 - **DOCS/merge-divergence.md** (-54 linhas): documento obsoleto após resolução de merge divergence
 
 ## [2.1.0] – 2026-01-25
+
+> **Nota sobre versionamento:**
+> A tag `v2.1.0` aponta para o commit [7a82806](https://github.com/engsofjvolfe/OpenPUP-Friendly/commit/7a82806), que contém apenas as features de preview humanizado. No entanto, o commit mais recente [0e688bc](https://github.com/engsofjvolfe/OpenPUP-Friendly/commit/0e688bc) consolidou AMBAS as features v2.1.0 (Preview) e v2.2.0 (Layer Zero), mas a mensagem do commit menciona apenas "v2.1.0". Este registro documenta especificamente o que foi implementado na v2.1.0 (preview humanizado com toggle), enquanto a v2.2.0 (Layer Zero) está documentada separadamente acima. Ver nota em [2.2.0] para contexto completo.
 
 ### Adicionado
 
